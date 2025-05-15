@@ -1,0 +1,64 @@
+/* src/styles/Learn.css */
+.learn-page {
+    position: relative;
+    padding: 2rem 1rem;
+    box-sizing: border-box;
+    overflow: hidden; /* hide any overflow */
+  }
+  
+  .back-btn.top-left {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+  }
+  
+  .learn-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 1rem;
+    padding-bottom: 1rem;
+  }
+  
+  .learn-card {
+    scroll-snap-align: center;
+    flex: 0 0 80%;
+    background: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  
+  .learn-problem {
+    margin: 1rem 0;
+  }
+  
+  .diff-text.easy { color: #28a745; }
+  .diff-text.medium { color: #ffc107; }
+  .diff-text.hard { color: #dc3545; }
+  
+  .learn-button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+  }
+  
+  .learn-button-row button {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 0.3rem;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  
+  .prev-btn { background: #6c757d; color: #fff; }
+  .next-btn { background: #007bff; color: #fff; }
+  .prev-btn:disabled,
+  .next-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+  

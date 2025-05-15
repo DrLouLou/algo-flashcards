@@ -1,0 +1,24 @@
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    z-index: 1000;
+  }
+  
+  body {
+    padding-top: 64px;
+  }
+  
+  main,
+  .card-list-page {
+    padding-top: 1rem;
+  }
+  

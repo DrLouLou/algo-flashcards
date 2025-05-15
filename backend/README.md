@@ -33,7 +33,21 @@ If you haven’t already got an admin account, run createsuperuser → you can n
 
 ## RUN AND TEST
 
+cd backend
+
 # in backend/
 uvicorn core.wsgi:application --reload --port 5000
 # or
 python manage.py runserver 0.0.0.0:8000
+
+## RESET FLASHCARDS
+
+python manage.py shell
+
+from flashcards.models import Card
+Card.objects.all().delete()
+exit()
+
+# delete anki_cards.txt and re-export if necessary
+
+python manage.py import_anki anki_cards.txt

@@ -18,9 +18,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
 from rest_framework import routers
-from flashcards.views import CardViewSet
+from flashcards.views import DeckViewSet, CardViewSet
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 router = routers.DefaultRouter()
+router.register(r'decks', DeckViewSet)
 router.register(r'cards', CardViewSet)
 
 
@@ -30,6 +35,15 @@ def home(request):
 
 urlpatterns = [
     path('', home),  
+    # JWT auth
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
 ]
+
+from django.urls import path, include
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
