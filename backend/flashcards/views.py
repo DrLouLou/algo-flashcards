@@ -5,6 +5,15 @@ from django.db.models import Q
 from .models import Deck, Card
 from .serializers import DeckSerializer, CardSerializer
 from .permissions import IsOwnerOrReadOnly, IsDeckOwnerOrReadOnly
+from rest_framework import generics, permissions
+from flashcards.serializers import RegisterSerializer
+
+class RegisterView(generics.CreateAPIView):
+    """
+    POST username/email/password/password2 to register a new user.
+    """
+    serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
 
 class DeckViewSet(viewsets.ModelViewSet):
     queryset = Deck.objects.all()

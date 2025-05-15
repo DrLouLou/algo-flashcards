@@ -1,7 +1,7 @@
 /* make the card-detail take up most of the viewport */
 .card-detail.container {
-    width: 90%;
-    max-width: 1200px;
+    width: 900px;
+    /* max-width: 1200px; */
     margin: 2rem auto;
     padding: 2rem;
     background: #ffffff;
@@ -107,3 +107,10 @@
   .flip-btn {
     order: 3;   /* last (right) */
   }
+
+.solution-editor {
+    border: 1px solid #ddd;
+    border-radius: 0.25rem;
+    overflow: hidden; /* hide scrollbars if you like */
+  }
+  

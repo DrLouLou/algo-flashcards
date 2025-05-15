@@ -1,23 +1,13 @@
-// src/Learn.jsx
-import { useState, useEffect, useRef } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Editor from '@monaco-editor/react'
 import './styles/Learn.css'
 
 export default function Learn({ cards }) {
   const [index, setIndex] = useState(0)
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [showHint, setShowHint] = useState(false)
   const navigate = useNavigate()
-  const containerRef = useRef(null)
-
-  // Scroll the carousel to the current card
-  useEffect(() => {
-    const container = containerRef.current
-    if (container && container.children[index]) {
-      container.children[index].scrollIntoView({
-        behavior: 'smooth',
-        inline: 'center',
-      })
-    }
-  }, [index])
 
   if (!cards || cards.length === 0) {
     return (
@@ -30,46 +20,119 @@ export default function Learn({ cards }) {
     )
   }
 
+  const card = cards[index]
+
+  const handlePrev = () => {
+    setIsFlipped(false)
+    setShowHint(false)
+    setIndex(i => Math.max(i - 1, 0))
+  }
+
+  const handleNext = () => {
+    setIsFlipped(false)
+    setShowHint(false)
+    setIndex(i => Math.min(i + 1, cards.length - 1))
+  }
+
+  const handleFlip = () => {
+    setIsFlipped(f => !f)
+    setShowHint(false)
+  }
+
   return (
     <div className="learn-page">
-      <button onClick={() => navigate(-1)} className="back-btn top-left">
+      {/* Back button top-left */}
+      <button onClick={() => navigate(-1)} className="back-btn">
         Back
       </button>
 
-      <div className="learn-carousel" ref={containerRef}>
-        {cards.map((card, i) => (
-          <div key={card.id} className="learn-card">
-            <h2>
-              Card {i + 1} of {cards.length}
-            </h2>
-            <h3 className="learn-problem">{card.problem}</h3>
-            <p>
-              <strong>Difficulty:</strong>{' '}
-              <span className={`diff-text ${card.difficulty.toLowerCase()}`}>
-                {card.difficulty}
-              </span>
-            </p>
-            {/* you can expose hint, pseudo, etc. here if desired */}
-          </div>
-        ))}
-      </div>
-
-      <div className="learn-button-row">
+      {/* Card row: Prev | Card | Next */}
+      <div className="learn-card-row">
         <button
-          onClick={() => setIndex(i => Math.max(i - 1, 0))}
+          onClick={handlePrev}
           className="prev-btn"
           disabled={index === 0}
         >
           Prev
         </button>
+
+        <div className="learn-card-container">
+          <div className={`learn-card ${isFlipped ? 'flipped' : ''}`}>  
+            <div className="flip-inner">
+              {/* Front Side */}
+              <div className="flip-front">
+                <h2>
+                  Card {index + 1} of {cards.length}
+                </h2>
+                <h3 className="learn-problem">{card.problem}</h3>
+                <p>
+                  <strong>Difficulty:</strong>{' '}
+                  <span className={`diff-text ${card.difficulty.toLowerCase()}`}>
+                    {card.difficulty}
+                  </span>
+                </p>
+                <div className="hint-section">
+                  <button
+                    onClick={() => setShowHint(h => !h)}
+                    className="hint-btn"
+                  >
+                    {showHint ? 'Hide Hint' : 'Show Hint'}
+                  </button>
+                  {showHint && (
+                    <>
+                      <h3>Hint</h3>
+                      <p>{card.hint}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Back Side */}
+              <div className="flip-back">
+                <h3>Pseudocode</h3>
+                <Editor
+                  height="200px"
+                  defaultLanguage="javascript"
+                  value={card.pseudo}
+                  options={{
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    wordWrap: 'on',
+                    fontSize: 14,
+                  }}
+                />
+                <h3 className="mt-4">Solution</h3>
+                <Editor
+                  height="200px"
+                  defaultLanguage="javascript"
+                  value={card.solution}
+                  options={{
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    wordWrap: 'on',
+                    fontSize: 14,
+                  }}
+                />
+                <h3 className="mt-4">Complexity</h3>
+                <p>{card.complexity || '–'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <button
-          onClick={() => setIndex(i => Math.min(i + 1, cards.length - 1))}
+          onClick={handleNext}
           className="next-btn"
           disabled={index === cards.length - 1}
         >
           Next
         </button>
       </div>
+
+      {/* Flip button bottom center */}
+      <button onClick={handleFlip} className="flip-btn">
+        Flip
+      </button>
     </div>
   )
 }

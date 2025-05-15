@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import Editor from '@monaco-editor/react'
+import { useState, useEffect, useRef } from 'react'
+
 import { useParams, Link } from 'react-router-dom'
 import fetchWithAuth from './api'
 import './styles/CardDetail.css'
@@ -11,6 +13,7 @@ export default function CardDetail() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const API = import.meta.env.VITE_API_BASE_URL
+  const editorRef = useRef(null)
 
   useEffect(() => {
     fetchWithAuth(`${API}/cards/${id}/`)
@@ -112,10 +115,19 @@ export default function CardDetail() {
 
             <label>
                 Solution
-                <textarea
-                name="solution"
+                <Editor
+                height="300px"
+                defaultLanguage="javascript"
                 value={formData.solution}
-                onChange={handleChange}
+                onChange={(value) =>
+                    setFormData(prev => ({ ...prev, solution: value }))
+                }
+                options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    wordWrap: 'on',
+                }}
+                onMount={(editor) => (editorRef.current = editor)}
                 />
             </label>
 
@@ -158,10 +170,31 @@ export default function CardDetail() {
                 // BACK SIDE
                 <>
                 <h2>Pseudocode</h2>
-                <pre>{formData.pseudo}</pre>
-
+                <Editor
+                    height="300px"
+                    defaultLanguage="python"
+                    value={formData.pseudo}
+                    options={{
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    wordWrap: 'on',
+                    }}
+                />
                 <h2>Solution</h2>
-                <pre>{formData.solution}</pre>
+                <div className="solution-editor">
+                <Editor
+                    height="300px"
+                    defaultLanguage="python"
+                    value={formData.solution}
+                    options={{
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    wordWrap: 'on',
+                    }}
+                />
+                </div>
 
                 <h2>Complexity</h2>
                 <p>{formData.complexity}</p>

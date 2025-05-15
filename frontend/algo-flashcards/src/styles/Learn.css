@@ -1,64 +1,131 @@
 /* src/styles/Learn.css */
+
+/* Page container: center content vertically and horizontally */
 .learn-page {
     position: relative;
-    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    min-height: calc(100vh - 64px); /* adjust if navbar height differs */
     box-sizing: border-box;
-    overflow: hidden; /* hide any overflow */
   }
   
-  .back-btn.top-left {
+  /* Back button positioned top-left */
+  .back-btn {
     position: absolute;
     top: 1rem;
     left: 1rem;
-  }
-  
-  .learn-carousel {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    gap: 1rem;
-    padding-bottom: 1rem;
-  }
-  
-  .learn-card {
-    scroll-snap-align: center;
-    flex: 0 0 80%;
-    background: #fff;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    padding: 1.5rem;
-    box-sizing: border-box;
-    text-align: center;
-  }
-  
-  .learn-problem {
-    margin: 1rem 0;
-  }
-  
-  .diff-text.easy { color: #28a745; }
-  .diff-text.medium { color: #ffc107; }
-  .diff-text.hard { color: #dc3545; }
-  
-  .learn-button-row {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 1rem;
-  }
-  
-  .learn-button-row button {
-    padding: 0.6rem 1.2rem;
+    padding: 0.5rem 1rem;
+    background: #6c757d;
+    color: #fff;
     border: none;
-    border-radius: 0.3rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  
+  /* Container for Prev, Card, Next */
+  .learn-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+    max-width: 900px;
+    margin-top: 2rem;
+  }
+  
+  /* Prev and Next buttons */
+  .prev-btn,
+  .next-btn {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: 0.5rem;
     font-size: 1rem;
     cursor: pointer;
+    background: #6c757d;
+    color: #fff;
+    transition: background 0.2s ease;
   }
-  
-  .prev-btn { background: #6c757d; color: #fff; }
-  .next-btn { background: #007bff; color: #fff; }
+  .prev-btn:hover:not(:disabled) { background: #5a6268; }
+  .next-btn { background: #28a745; }
+  .next-btn:hover:not(:disabled) { background: #218838; }
   .prev-btn:disabled,
   .next-btn:disabled {
     background: #ccc;
     cursor: not-allowed;
   }
+  
+  /* Card container with fixed size and perspective */
+  .learn-card-container {
+    perspective: 1000px;
+    width: 600px;
+    height: 700px;
+  }
+  
+  /* Card face wrapper */
+  .learn-card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  .flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+  }
+  .learn-card.flipped .flip-inner {
+    transform: rotateY(180deg);
+  }
+  
+  /* Front and back faces */
+  .flip-front,
+  .flip-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    background: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    padding: 2rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  .flip-back {
+    transform: rotateY(180deg);
+  }
+  
+  /* Problem heading */
+  .learn-problem {
+    font-size: 1.5rem;
+    margin: 1rem 0;
+    color: #102a43;
+  }
+  
+  /* Difficulty text colors */
+  .diff-text.easy { color: #28a745; }
+  .diff-text.medium { color: #ffc107; }
+  .diff-text.hard { color: #dc3545; }
+  
+  /* Flip button centered below card */
+  .flip-btn {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    background: #007bff;
+    color: #fff;
+    transition: background 0.2s ease;
+  }
+  .flip-btn:hover { background: #0069d9; }
+
   

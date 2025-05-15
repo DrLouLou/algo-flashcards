@@ -1,0 +1,112 @@
+/* make the login screen cover the entire viewport and disable scrolling */
+html, body, #root {
+  height: auto;
+  overflow: auto;
+}
+
+/* top-level container */
+.auth-page {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f0f4f8;
+  padding: 1rem;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* the white card itself */
+.auth-card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 800px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* form title */
+.auth-title {
+  margin-bottom: 1.5rem;
+  color: #102a43;
+}
+
+/* error message */
+.auth-error {
+  color: #d64545;
+  margin-bottom: 1rem;
+}
+
+/* each label+input wrapper */
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+/* label styling */
+.auth-field label {
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: #334e68;
+}
+
+/* input styling */
+.auth-field input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #bcccdc;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  color: #102a43;
+}
+
+/* focused input */
+.auth-field input:focus {
+  outline: none;
+  border-color: #627d98;
+  box-shadow: 0 0 0 2px rgba(98, 125, 152, 0.2);
+}
+
+/* submit button for both login & signup */
+.auth-button {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #1d72b8;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* hover state */
+.auth-button:hover {
+  background-color: #155d8a;
+}
+
+/* toggle between Login/Sign-Up */
+.auth-toggle {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+/* the “Sign Up” / “Log In” link */
+.auth-toggle-btn {
+  background: none;
+  border: none;
+  color: #1d72b8;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* hover underline */
+.auth-toggle-btn:hover {
+  text-decoration: underline;
+}
