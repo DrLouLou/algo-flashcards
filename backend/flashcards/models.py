@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 class Deck(models.Model):
     name        = models.CharField(max_length=100)
@@ -29,4 +30,27 @@ class Card(models.Model):
     def __str__(self):
         return self.problem
 
+class UserCard(models.Model):
+    RATING_CHOICES = [
+        ('again', 'Again'),
+        ('hard',  'Hard'),
+        ('good',  'Good'),
+        ('easy',  'Easy'),
+    ]
 
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    card = models.ForeignKey(Card, on_delete=models.CASCADE)
+    # SM-2 fields:
+    ease_factor = models.FloatField(default=2.5)
+    interval    = models.IntegerField(default=0)        # days until next review
+    repetitions = models.IntegerField(default=0)
+    due_date    = models.DateTimeField(default=timezone.now)
+    last_rating = models.CharField(
+        max_length=10,
+        choices=RATING_CHOICES,
+        blank=True,
+        null=True,
+        default=None,
+    )
+    class Meta:
+        unique_together = ('user', 'card')

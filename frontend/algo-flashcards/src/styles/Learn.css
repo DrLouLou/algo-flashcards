@@ -128,4 +128,75 @@
   }
   .flip-btn:hover { background: #0069d9; }
 
+  .learn-button-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
   
+  .learn-button-row button {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: #fff;
+  }
+  
+  .again-btn { background: #dc3545; }  /* red */
+  .hard-btn  { background: #fd7e14; }  /* orange */
+  .good-btn  { background: #ffc107; }  /* yellow */
+  .easy-btn  { background: #28a745; }  /* green */
+  .flip-btn  { background: #007bff; }  /* blue */
+
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+  }
+  
+  .modal {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  
+  .modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+  }
+
+  .chart-dropdown {
+    margin: 1rem 0;
+    text-align: center;
+  }
+  
+  /* toggle button */
+  .chart-toggle {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .chart-toggle:hover {
+    background: #0069d9;
+  }
+  
+  /* chart container (adds padding) */
+  .chart-container {
+    margin-top: 0.75rem;
+    width: 600px;
+  }

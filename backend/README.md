@@ -51,3 +51,8 @@ exit()
 # delete anki_cards.txt and re-export if necessary
 
 python manage.py import_anki anki_cards.txt
+
+# To wipe dev database
+
+delete db.sqlite file
+run python manage.py migrate

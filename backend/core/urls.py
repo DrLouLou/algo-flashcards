@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
 from rest_framework import routers
-from flashcards.views import DeckViewSet, CardViewSet, RegisterView
+from flashcards.views import DeckViewSet, CardViewSet, RegisterView, UserCardViewSet
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -27,6 +27,8 @@ from rest_framework_simplejwt.views import (
 router = routers.DefaultRouter()
 router.register(r'decks', DeckViewSet)
 router.register(r'cards', CardViewSet)
+router.register(r'usercards', UserCardViewSet, basename='usercard')
+
 
 
 def home(request):
