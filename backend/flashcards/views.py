@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import viewsets, generics, permissions
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.db.models import Q
@@ -35,15 +36,34 @@ class CardViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsDeckOwnerOrReadOnly]
     serializer_class   = CardSerializer
     filterset_fields   = ['deck']
-
+    
     def get_queryset(self):
         user = self.request.user
-        # only cards in decks the user owns or global starter decks (owner null)
+        qs = Card.objects.all()
+
+        # 1) filter out any cards in decks you shouldn't see
         if user.is_authenticated:
-            return Card.objects.filter(
-                Q(deck__owner=user) | Q(deck__owner__isnull=True)
+            qs = qs.filter(
+                Q(deck__owner__isnull=True) |    # global decks
+                Q(deck__owner=user)              # your own decks
             )
-        return Card.objects.filter(deck__owner__isnull=True)
+        else:
+            qs = qs.filter(deck__owner__isnull=True)
+
+        # 2) if the frontend passed a ?deck=, apply that
+        deck_id = self.request.query_params.get('deck')
+        if deck_id is not None:
+            qs = qs.filter(deck_id=deck_id)
+
+        return qs
+    
+    def perform_create(self, serializer):
+        deck = serializer.validated_data['deck']
+        if deck.owner != self.request.user:
+            raise PermissionDenied("You can only add cards to your own decks.")
+        card = serializer.save()
+        # create the initial UserCard for the creator
+        UserCard.objects.create(user=self.request.user, card=card)
 
 class UserCardViewSet(viewsets.ModelViewSet):
     serializer_class = UserCardSerializer

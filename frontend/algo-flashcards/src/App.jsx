@@ -14,6 +14,7 @@ import CardContainer from './CardContainer'
 import CardDetail    from './CardDetail'
 import DeckDropdown  from './DeckDropdown'
 import Learn         from './Learn'
+import CreateCard from './CreateCard'
 
 import './styles/App.css'
 
@@ -104,7 +105,11 @@ export default function App() {
                       </button>
                     </Link>
                   </header>
-
+                  <Link to="/cards/new">
+                    <button className="new-card-btn" disabled={!selectedDeckId}>
+                      + New Card
+                    </button>
+                  </Link>
                   <div className="card-list-page">
                     <h3>Your Flashcards:</h3>
                     <div className="filter-buttons">
@@ -128,6 +133,9 @@ export default function App() {
 
             {/* Detail */}
             <Route path="/cards/:id" element={<CardDetail />} />
+            
+            {/* Create Card */}
+            <Route path="/cards/new" element={<CreateCard decks={decks} />} />
 
             {/* Learn */}
             <Route
