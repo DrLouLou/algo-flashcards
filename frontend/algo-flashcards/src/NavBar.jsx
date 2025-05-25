@@ -15,6 +15,8 @@ export default function NavBar({ onLogout }) {
     <nav className="navbar">
       <div className="navbar-left">
         <Link to="/">Home</Link>
+        <Link to="/generate">Generate</Link>
+        <Link to="/about">About</Link>
       </div>
       <div className="navbar-right">
         <button onClick={handleLogout} className="logout-btn">

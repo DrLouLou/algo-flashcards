@@ -15,6 +15,8 @@ import CardDetail    from './CardDetail'
 import DeckDropdown  from './DeckDropdown'
 import Learn         from './Learn'
 import CreateCard from './CreateCard'
+import About from './About'
+import Generate from './Generate'
 
 import './styles/App.css'
 
@@ -130,6 +132,11 @@ export default function App() {
                 </>
               }
             />
+            {/* About */}
+            <Route path="/about" element={<About />} />
+
+            {/* Generate */}
+            <Route path="/generate" element={<Generate />} />
 
             {/* Detail */}
             <Route path="/cards/:id" element={<CardDetail />} />

@@ -1,6 +1,11 @@
+import os
+import json
+import re
+from django.conf import settings
+import openai
 from django.shortcuts import render
 from django.utils import timezone
-from rest_framework import viewsets, generics, permissions
+from rest_framework import viewsets, generics, permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -9,6 +14,8 @@ from django.db.models import Q
 from .models import Deck, Card, UserCard
 from .serializers import DeckSerializer, CardSerializer, RegisterSerializer, UserCardSerializer
 from .permissions import IsOwnerOrReadOnly, IsDeckOwnerOrReadOnly
+
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 class RegisterView(generics.CreateAPIView):
     """
@@ -119,3 +126,73 @@ class UserCardViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
+    
+
+
+class CardGenerationAPIView(generics.GenericAPIView):
+    """
+    POST { input_text } → use LLM to parse into JSON fields matching Card model
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        prompt_text = request.data.get("input_text", "").strip()
+        if not prompt_text:
+            return Response({"detail": "No input_text provided."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        system = """
+You are an assistant that, given a programming problem description or title,
+produce **only** a JSON object with these keys: problem, difficulty, category,
+hint, pseudo, solution, complexity.  Do **not** wrap it in markdown or include
+any commentary—just the raw JSON.
+"""
+        user_msg = f"Here is my input: '''{prompt_text}'''\n\nReturn the JSON."
+
+        try:
+            resp = client.chat.completions.create(
+                model="gpt-4.1-mini",
+                messages=[
+                    {"role": "system",  "content": system},
+                    {"role": "user",    "content": user_msg},
+                ],
+                temperature=0.2,
+                max_tokens=800,
+            )
+            text = resp.choices[0].message.content
+            # DEBUG:
+            print("🚧 [DEBUG] LLM returned:", repr(text))
+
+            # --- strip off any Markdown fences or extra text ---
+            # find the first "{" and last "}" and extract between
+            start = text.find("{")
+            end   = text.rfind("}")
+            if start != -1 and end != -1 and end > start:
+                text = text[start : end + 1]
+            else:
+                # fallback: remove ```json``` fences if present
+                text = re.sub(r"^```(?:json)?\s*", "", text)
+                text = re.sub(r"\s*```$", "", text)
+
+            # now parse
+            try:
+                data = json.loads(text)
+            except json.JSONDecodeError as e:
+                return Response({
+                    "detail":      "LLM output was not valid JSON",
+                    "raw_output":  text,
+                    "json_error":  str(e),
+                }, status=status.HTTP_502_BAD_GATEWAY)
+
+        except Exception as e:
+            return Response({"detail": "LLM error", "error": str(e)},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        required = ["problem","difficulty","category","hint","pseudo","solution","complexity"]
+        if not all(k in data for k in required):
+            return Response({
+                "detail":   "LLM did not return all required fields",
+                "returned": list(data.keys())
+            }, status=status.HTTP_502_BAD_GATEWAY)
+
+        return Response(data, status=status.HTTP_200_OK)

@@ -44,3 +44,14 @@ export default async function fetchWithAuth(url, options = {}) {
 
   return res
 }
+
+export function generateCard(inputText) {
+  return fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/generate_card/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ input_text: inputText }),
+  }).then(res => {
+    if (!res.ok) throw new Error("Generation failed");
+    return res.json();
+  });
+}
