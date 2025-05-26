@@ -143,8 +143,9 @@ class CardGenerationAPIView(generics.GenericAPIView):
 
         system = """
 You are an assistant that, given a programming problem description or title,
-produce **only** a JSON object with these keys: problem, difficulty, category,
-hint, pseudo, solution, complexity.  Do **not** wrap it in markdown or include
+produces **only** a JSON object with these keys: problem, difficulty, category,
+hint, pseudo, solution, complexity.  'pseudo' should be a description of the solution 
+and 'solution' should be the solution itself, in python. Do **not** wrap it in markdown or include
 any commentary—just the raw JSON.
 """
         user_msg = f"Here is my input: '''{prompt_text}'''\n\nReturn the JSON."
@@ -161,7 +162,7 @@ any commentary—just the raw JSON.
             )
             text = resp.choices[0].message.content
             # DEBUG:
-            print("🚧 [DEBUG] LLM returned:", repr(text))
+            print("[DEBUG] LLM returned:", repr(text))
 
             # --- strip off any Markdown fences or extra text ---
             # find the first "{" and last "}" and extract between
