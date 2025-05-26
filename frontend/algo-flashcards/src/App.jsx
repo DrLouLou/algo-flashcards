@@ -16,8 +16,9 @@ import DeckDropdown  from './DeckDropdown'
 import Learn         from './Learn'
 import CreateCard from './CreateCard'
 import About from './About'
+import Info from './Info'
 import Generate from './Generate'
-
+import MainIcon from '../public/icon.png'
 import './styles/App.css'
 
 export default function App() {
@@ -71,93 +72,100 @@ export default function App() {
         }}
         showLogout={!!token}
       />
+      <div className="main-content">
+        <Routes>
+          {/* PUBLIC */}
+          <Route
+            path="/login"
+            element={
+              token
+                ? <Navigate to="/" replace />
+                : <Auth onLogin={tok => setToken(tok)} />
+            }
+          />
 
-      <Routes>
-        {/* PUBLIC */}
-        <Route
-          path="/login"
-          element={
-            token
-              ? <Navigate to="/" replace />
-              : <Auth onLogin={tok => setToken(tok)} />
-          }
-        />
-
-        {/* PROTECTED */}
-        {token ? (
-          <>
-            {/* Home */}
-            <Route
-              path="/"
-              element={
-                <>
-                  <header className="header">
-                    <h1>Flashcards by Deck</h1>
-                    <DeckDropdown
-                      decks={decks}
-                      selectedDeckId={selectedDeckId}
-                      onChange={setDeckId}
-                    />
-                    <Link to="/learn">
-                      <button
-                        className="learn-btn"
-                        disabled={!selectedDeckId}
-                      >
-                        Learn
+          {/* PROTECTED */}
+          {token ? (
+            <>
+              {/* Home */}
+              <Route
+                path="/"
+                element={
+                  <>
+                    <header className="header">
+                      <div className="icon-title">
+                        <img src={MainIcon} />
+                        <h1>Card.io</h1>
+                      </div>
+                      <DeckDropdown
+                        decks={decks}
+                        selectedDeckId={selectedDeckId}
+                        onChange={setDeckId}
+                      />
+                      <Link to="/learn">
+                        <button
+                          className="learn-btn"
+                          disabled={!selectedDeckId}
+                        >
+                          Learn
+                        </button>
+                      </Link>
+                    </header>
+                    <Link to="/cards/new">
+                      <button className="new-card-btn" disabled={!selectedDeckId}>
+                        + New Card
                       </button>
                     </Link>
-                  </header>
-                  <Link to="/cards/new">
-                    <button className="new-card-btn" disabled={!selectedDeckId}>
-                      + New Card
-                    </button>
-                  </Link>
-                  <div className="card-list-page">
-                    <h3>Your Flashcards:</h3>
-                    <div className="filter-buttons">
-                      {difficultyOptions.map(diff => (
-                        <button
-                          key={diff}
-                          className={`filter-btn ${diff.toLowerCase()}-btn ${
-                            selectedDifficulties.includes(diff) ? 'active' : ''
-                          }`}
-                          onClick={() => toggleDifficulty(diff)}
-                        >
-                          {diff}
-                        </button>
-                      ))}
+                    <div className="card-list-page">
+                      <h3>Your Flashcards:</h3>
+                      <div className="filter-buttons">
+                        {difficultyOptions.map(diff => (
+                          <button
+                            key={diff}
+                            className={`filter-btn ${diff.toLowerCase()}-btn ${
+                              selectedDifficulties.includes(diff) ? 'active' : ''
+                            }`}
+                            onClick={() => toggleDifficulty(diff)}
+                          >
+                            {diff}
+                          </button>
+                        ))}
+                      </div>
+                      <CardContainer cardData={filteredCards} />
                     </div>
-                    <CardContainer cardData={filteredCards} />
-                  </div>
-                </>
-              }
-            />
-            {/* About */}
-            <Route path="/about" element={<About />} />
+                  </>
+                }
+              />
+              {/* About */}
+              <Route path="/about" element={<About />} />
 
-            {/* Generate */}
-            <Route path="/generate" element={<Generate />} />
+              {/* Generate */}
+              <Route path="/generate" element={<Generate />} />
 
-            {/* Detail */}
-            <Route path="/cards/:id" element={<CardDetail />} />
-            
-            {/* Create Card */}
-            <Route path="/cards/new" element={<CreateCard decks={decks} />} />
+              {/* Spaced-Repetition */}
+              <Route path="/info" element={<Info />} />
 
-            {/* Learn */}
-            <Route
-              path="/learn"
-              element={
-                <Learn
-                  selectedDeckId={selectedDeckId} 
-                />
-              }
-            />
-          </>
-        ) : (
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        )}
-      </Routes>
+              {/* Detail */}
+              <Route path="/cards/:id" element={<CardDetail />} />
+              
+              {/* Create Card */}
+              <Route path="/cards/new" element={<CreateCard decks={decks} />} />
+
+              {/* Learn */}
+              <Route
+                path="/learn"
+                element={
+                  <Learn
+                    selectedDeckId={selectedDeckId} 
+                  />
+                }
+              />
+            </>
+          ) : (
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          )}
+        </Routes>
+      </div>
     </Router>
   )
 }

@@ -3,6 +3,13 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  --navbar-height: 64px;
+}
+
+.main-content {
+  padding-top: var(--navbar-height);
+  /* optional to fill viewport: */
+  min-height: calc(100vh - var(--navbar-height));
 }
 
 .logo {

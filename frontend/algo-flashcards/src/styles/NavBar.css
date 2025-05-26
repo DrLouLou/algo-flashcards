@@ -1,10 +1,16 @@
 .navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;              /* pick whatever height you like */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 0 2rem;
   background: #f8f9fa;
   border-bottom: 1px solid #ddd;
+  z-index: 1000;
 }
 
 /* make the left and right groups flex containers with gap */

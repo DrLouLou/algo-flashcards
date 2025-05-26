@@ -16,6 +16,7 @@ export default function NavBar({ onLogout }) {
       <div className="navbar-left">
         <Link to="/">Home</Link>
         <Link to="/generate">Generate</Link>
+        <Link to="/info">Info</Link>
         <Link to="/about">About</Link>
       </div>
       <div className="navbar-right">
