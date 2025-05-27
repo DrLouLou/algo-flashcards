@@ -64,7 +64,7 @@ export default function CardDetail() {
   }
 
   return (
-    <div>
+    <div className="">
         <Link to={'/'}>
             <button>Back</button>
         </Link>
@@ -216,7 +216,6 @@ export default function CardDetail() {
             <>
                 <button onClick={toggleFlip} className="flip-btn">
                     Flip
-                {/* {isFlipped ? 'Show Front' : 'Show Back'} */}
                 </button>
                 <button onClick={() => setIsEditing(true)} className="edit-btn">
                 Edit

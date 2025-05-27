@@ -97,27 +97,25 @@ export default function App() {
                         <img src={MainIcon} />
                         <h1>Card.io</h1>
                       </div>
+                    </header>
+                    <div className="deck-row">
                       <DeckDropdown
-                        decks={decks}
-                        selectedDeckId={selectedDeckId}
-                        onChange={setDeckId}
+                          decks={decks}
+                          selectedDeckId={selectedDeckId}
+                          onChange={setDeckId}
                       />
                       <Link to="/learn">
-                        <button
-                          className="learn-btn"
-                          disabled={!selectedDeckId}
-                        >
+                        <button className="learn-btn" disabled={!selectedDeckId}>
                           Learn
                         </button>
                       </Link>
-                    </header>
-                    <Link to="/cards/new">
-                      <button className="new-card-btn" disabled={!selectedDeckId}>
-                        + New Card
-                      </button>
-                    </Link>
+                      <Link to="/cards/new">
+                        <button className="new-card-btn" disabled={!selectedDeckId}>
+                          + New Card
+                        </button>
+                      </Link>
+                    </div>
                     <div className="card-list-page">
-                      <h3>Your Flashcards:</h3>
                       <div className="filter-buttons">
                         {difficultyOptions.map(diff => (
                           <button

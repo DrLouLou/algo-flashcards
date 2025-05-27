@@ -1,32 +1,36 @@
 /* make the card-detail take up most of the viewport */
 .card-detail.container {
-    width: 900px;
-    /* max-width: 1200px; */
+    display: flex;
+    flex-direction: column;
+    width: 40vw;
+    min-height: 60vh;   /* same as before */
+    height: auto;       /* so it can grow if the back side is taller */
     margin: 2rem auto;
     padding: 2rem;
-    background: #ffffff;
+    background: #fff;
     border-radius: 0.5rem;
     box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-  }
+    overflow-y: auto;   /* allow scrolling if content exceeds viewport */
+}
   
-  /* Headline centered */
-  .card-detail h1 {
+/* Headline centered */
+.card-detail h1 {
     text-align: center;
     margin-bottom: 1.5rem;
-  }
-  
-  /* sections or form fields all spaced out */
-  .card-detail label,
-  .card-detail h2 {
+}
+
+/* sections or form fields all spaced out */
+.card-detail label,
+.card-detail h2 {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 600;
     color: #333;
-  }
-  
-  /* input and textarea styles */
-  .card-detail input[type="text"],
-  .card-detail textarea {
+}
+
+/* input and textarea styles */
+.card-detail input[type="text"],
+.card-detail textarea {
     width: 100%;
     padding: 0.75rem;
     margin-bottom: 1.5rem;
@@ -34,83 +38,81 @@
     border-radius: 0.25rem;
     font-size: 1rem;
     box-sizing: border-box;
-  }
-  
-  /* Give lots of vertical room */
-  .card-detail textarea {
+}
+
+/* Give lots of vertical room */
+.card-detail textarea {
     min-height: 250px;
     font-family: inherit;
     resize: vertical;
-  }
-  
-  /* View-mode blocks get the same height */
-  .card-detail pre {
+}
+
+/* View-mode blocks get the same height */
+.card-detail pre {
     min-height: 250px;
     padding: 1rem;
     background: #f5f5f5;
     border-radius: 0.25rem;
     overflow-x: auto;
     margin-bottom: 1.5rem;
-  }
+}
   
-  /* button row aligned to the right */
-  .button-row {
+.button-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 0.75rem;
-    margin-top: 1rem;
-  }
+    margin-top: auto;   /* ← key: consumes all leftover space */
+}
   
-  /* shared button styles */
-  .button-row button {
+/* shared button styles */
+.button-row button {
     padding: 0.6rem 1.2rem;
     border: none;
     border-radius: 0.3rem;
     font-size: 1rem;
     cursor: pointer;
-  }
+}
   
-  /* Save / Reset / Cancel / Edit / Back colors */
-  .save-btn {
+.save-btn {
     background-color: #28a745;
     color: #fff;
-  }
-  .save-btn:hover { background-color: #218838; }
-  
-  .reset-btn {
+}
+.save-btn:hover { background-color: #218838; }
+
+.reset-btn {
     background-color: #ffc107;
     color: #212529;
-  }
-  .reset-btn:hover { background-color: #e0a800; }
-  
-  .cancel-btn {
+}
+.reset-btn:hover { background-color: #e0a800; }
+
+.cancel-btn {
     background-color: #dc3545;
     color: #fff;
-  }
-  .cancel-btn:hover { background-color: #c82333; }
-  
-  .edit-btn {
+}
+.cancel-btn:hover { background-color: #c82333; }
+
+.edit-btn {
     order: 1;
     background-color: #007bff;
     color: #fff;
-  }
-  .edit-btn:hover { background-color: #0069d9; }
-  
-  .back-btn {
+}
+.edit-btn:hover { background-color: #0069d9; }
+
+.back-btn {
     order: 1;
     background-color: #6c757d;
     color: #fff;
-  }
-  .back-btn:hover { background-color: #5a6268; }
-  
-  .flip-btn {
-    order: 3;   /* last (right) */
-  }
+}
+.back-btn:hover { background-color: #5a6268; }
+
+.flip-btn {
+    order: 3;
+}
 
 .solution-editor {
     border: 1px solid #ddd;
     border-radius: 0.25rem;
-    overflow: hidden; /* hide scrollbars if you like */
+    overflow: hidden; 
   }
   

@@ -3,7 +3,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 64px;              /* pick whatever height you like */
+  height: 64px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -13,30 +13,43 @@
   z-index: 1000;
 }
 
-/* make the left and right groups flex containers with gap */
 .navbar-left,
 .navbar-right {
   display: flex;
   align-items: center;
-  gap: 1.5rem; /* adjust to taste */
+  gap: 1.5rem;
 }
 
-/* optional: if you only want to space the links, not the container */
-.navbar-left a {
-  text-decoration: none;
+.navbar-left a,
+.navbar-right .logout-btn {
+  position: relative;           
+  padding: 0.25rem 0.5rem;
   font-weight: 600;
   color: #333;
-}
-
-/* logout button stays at the right with its own gap if you add more */
-.navbar-right .logout-btn {
+  text-decoration: none;
   background: none;
   border: none;
-  font-weight: 500;
-  color: #d9534f;
   cursor: pointer;
+  transition: color 0.3s ease,
+              transform 0.2s ease;
+}
+
+.navbar-left a::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 2px;
+  width: 0%;
+  background-color: currentColor;
+}
+
+.navbar-left a:hover,
+.navbar-right .logout-btn:hover {
+  color: #007bff;
+  transform: translateY(-2px);
 }
 
 .navbar-right .logout-btn:hover {
-  text-decoration: underline;
+  color: #c12e2a;
 }
+
