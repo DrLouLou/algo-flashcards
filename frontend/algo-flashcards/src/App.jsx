@@ -18,6 +18,7 @@ import CreateCard from './CreateCard'
 import About from './About'
 import Info from './Info'
 import Generate from './Generate'
+import CreateDeck from './CreateDeck'
 import MainIcon from '../public/icon.png'
 import './styles/App.css'
 
@@ -47,6 +48,19 @@ export default function App() {
       .then(setCards)
       .catch(console.error)
   }, [token, selectedDeckId])
+
+  // useEffect(() => {
+  //   if (!token) return;
+  //   let url = `${API}/usercards/?deck=${selectedDeckId || ''}`;
+  //   fetchWithAuth(url)
+  //     .then(r => r.json())
+  //     .then(raw => {
+  //       const items = raw.results || raw;
+  //       const dist = items.reduce(/* …compute your dist… */);
+  //       setDistribution(dist);
+  //     })
+  //     .catch(console.error);
+  // }, [token, selectedDeckId]);
 
   // 3) Difficulty filter setup
   const ORDER = ['Easy', 'Medium', 'Hard']
@@ -110,8 +124,13 @@ export default function App() {
                         </button>
                       </Link>
                       <Link to="/cards/new">
-                        <button className="new-card-btn" disabled={!selectedDeckId}>
+                        <button className="new-card-btn">
                           + New Card
+                        </button>
+                      </Link>
+                      <Link to="/decks/new">
+                        <button className="new-deck-btn">
+                          + New Deck
                         </button>
                       </Link>
                     </div>
@@ -148,6 +167,9 @@ export default function App() {
               
               {/* Create Card */}
               <Route path="/cards/new" element={<CreateCard decks={decks} />} />
+
+              {/* Create Deck */}
+              <Route path="/decks/new" element={<CreateDeck />} />
 
               {/* Learn */}
               <Route
