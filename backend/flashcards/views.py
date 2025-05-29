@@ -144,9 +144,9 @@ class CardGenerationAPIView(generics.GenericAPIView):
         system = """
 You are an assistant that, given a programming problem description or title,
 produces **only** a JSON object with these keys: problem, difficulty, category,
-hint, pseudo, solution, complexity.  'pseudo' should be a description of the solution 
-and 'solution' should be the solution itself, in python. Do **not** wrap it in markdown or include
-any commentary—just the raw JSON.
+hint, pseudo, solution, complexity. 'problem' is the title of the problem, 'pseudo' s
+hould be a description of the solution and 'solution' should be the solution itself, in python. 
+Do **not** wrap it in markdown or include any commentary—just the raw JSON.
 """
         user_msg = f"Here is my input: '''{prompt_text}'''\n\nReturn the JSON."
 
