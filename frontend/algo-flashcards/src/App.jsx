@@ -19,6 +19,7 @@ import About from './About'
 import Info from './Info'
 import Generate from './Generate'
 import CreateDeck from './CreateDeck'
+import StudyAlarm from './StudyAlarm'
 import MainIcon from '../public/icon.png'
 import './styles/App.css'
 
@@ -148,6 +149,7 @@ export default function App() {
                           </button>
                         ))}
                       </div>
+                      <StudyAlarm />
                       <CardContainer cardData={filteredCards} />
                     </div>
                   </>
