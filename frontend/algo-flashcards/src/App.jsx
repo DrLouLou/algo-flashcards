@@ -50,19 +50,6 @@ export default function App() {
       .catch(console.error)
   }, [token, selectedDeckId])
 
-  // useEffect(() => {
-  //   if (!token) return;
-  //   let url = `${API}/usercards/?deck=${selectedDeckId || ''}`;
-  //   fetchWithAuth(url)
-  //     .then(r => r.json())
-  //     .then(raw => {
-  //       const items = raw.results || raw;
-  //       const dist = items.reduce(/* …compute your dist… */);
-  //       setDistribution(dist);
-  //     })
-  //     .catch(console.error);
-  // }, [token, selectedDeckId]);
-
   // 3) Difficulty filter setup
   const ORDER = ['Easy', 'Medium', 'Hard']
   const diffs = Array.from(new Set(cards.map(c => c.difficulty).filter(Boolean)))
@@ -107,51 +94,56 @@ export default function App() {
                 path="/"
                 element={
                   <>
-                    <header className="header">
-                      <div className="icon-title">
-                        <img src={MainIcon} />
-                        <h1>Card.io</h1>
+                      <header className="header">
+                        <div className="icon-title">
+                          <img src={MainIcon} />
+                          <h1>Card.io</h1>
+                        </div>
+                      </header>
+
+                      <div className="content">
+                        <div className="alarm">
+                          <StudyAlarm />
+                        </div>
+                        <div className="card-and-buttons">
+                          <div className="deck-row">
+                            <DeckDropdown
+                              decks={decks}
+                              selectedDeckId={selectedDeckId}
+                              onChange={setDeckId}
+                            />
+                            <Link to="/learn">
+                              <button className="learn-btn" disabled={!selectedDeckId}>
+                                Learn
+                              </button>
+                            </Link>
+                            <Link to="/cards/new">
+                              <button className="new-card-btn">+ New Card</button>
+                            </Link>
+                            <Link to="/decks/new">
+                              <button className="new-deck-btn">+ New Deck</button>
+                            </Link>
+                          </div>
+                          <div className="filter-buttons">
+                            {difficultyOptions.map((diff) => (
+                              <button
+                                key={diff}
+                                className={`
+                                  filter-btn
+                                  ${diff.toLowerCase()}-btn
+                                  ${selectedDifficulties.includes(diff) ? "active" : ""}
+                                `}
+                                onClick={() => toggleDifficulty(diff)}
+                              >
+                                {diff}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="card-container">
+                            <CardContainer cardData={filteredCards} />
+                          </div>
+                        </div>
                       </div>
-                    </header>
-                    <div className="deck-row">
-                      <DeckDropdown
-                          decks={decks}
-                          selectedDeckId={selectedDeckId}
-                          onChange={setDeckId}
-                      />
-                      <Link to="/learn">
-                        <button className="learn-btn" disabled={!selectedDeckId}>
-                          Learn
-                        </button>
-                      </Link>
-                      <Link to="/cards/new">
-                        <button className="new-card-btn">
-                          + New Card
-                        </button>
-                      </Link>
-                      <Link to="/decks/new">
-                        <button className="new-deck-btn">
-                          + New Deck
-                        </button>
-                      </Link>
-                    </div>
-                    <div className="card-list-page">
-                      <div className="filter-buttons">
-                        {difficultyOptions.map(diff => (
-                          <button
-                            key={diff}
-                            className={`filter-btn ${diff.toLowerCase()}-btn ${
-                              selectedDifficulties.includes(diff) ? 'active' : ''
-                            }`}
-                            onClick={() => toggleDifficulty(diff)}
-                          >
-                            {diff}
-                          </button>
-                        ))}
-                      </div>
-                      <StudyAlarm />
-                      <CardContainer cardData={filteredCards} />
-                    </div>
                   </>
                 }
               />

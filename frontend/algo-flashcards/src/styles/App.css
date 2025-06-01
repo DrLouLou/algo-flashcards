@@ -54,8 +54,9 @@
 .filter-buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  margin: 1rem 0;
+  margin-right: 2vw;
+  /* gap: 0.5rem; */
+  /* margin: 1rem 0; */
 }
 
 /* base toggle button */
@@ -96,3 +97,22 @@
   opacity: 0.8;
 }
 
+.content {
+  display: flex;
+  flex: col;
+  position: relative;
+  /* align-items: center; */
+}
+
+.card-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-right: 5vh;
+}
+
+.alarm {
+  margin-top: 0;
+  margin-right: 15vh;
+}
