@@ -1,26 +1,52 @@
-import { Link, useNavigate } from 'react-router-dom'
-import './styles/NavBar.css'
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 export default function NavBar({ onLogout }) {
-  const navigate = useNavigate()
+  const navigate  = useNavigate();
+  const { pathname } = useLocation();     // 👉 to highlight the active link
 
   const handleLogout = () => {
-    // Clear token and redirect to login
-    localStorage.removeItem('accessToken')
-    onLogout(null)
-    navigate('/login')
-  }
+    localStorage.removeItem('accessToken');
+    onLogout(null);
+    navigate('/login');
+  };
+
+  const menu = [
+    { to: '/',         label: 'Home'      },
+    { to: '/generate', label: 'Generate'  },
+    { to: '/info',     label: 'Info'      },
+    { to: '/about',    label: 'About'     },
+  ];
 
   return (
-    <nav className="navbar">
-      <div className="navbar-left">
-        <Link to="/">Home</Link>
-        <Link to="/generate">Generate</Link>
-        <Link to="/info">Info</Link>
-        <Link to="/about">About</Link>
-      </div>
-      <div className="navbar-right">
-        <button onClick={handleLogout} className="logout-btn">
+    <nav className="fixed inset-x-0 top-0 z-50 bg-white/80 backdrop-blur shadow-sm">
+      <div className="mx-auto max-w-7xl h-16 flex items-center justify-between px-4">
+        {/* -------- Left: nav links -------- */}
+        <div className="flex items-center gap-6">
+          {menu.map(({ to, label }) => {
+            const active = pathname === to;
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={`relative font-semibold text-sm transition
+                  ${active ? 'text-indigo-600' : 'text-gray-700 hover:text-indigo-500'}
+                  after:absolute after:-bottom-1 after:left-0 after:h-0.5
+                  after:w-full after:scale-x-0 after:bg-current after:transition-transform
+                  ${active ? 'after:scale-x-100' : 'hover:after:scale-x-100'}`}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* -------- Right: logout -------- */}
+        <button
+          onClick={handleLogout}
+          className="rounded-md px-3 py-2 text-sm font-medium
+                     text-gray-700 hover:bg-gray-100 transition
+                     hover:text-red-600"
+        >
           Logout
         </button>
       </div>

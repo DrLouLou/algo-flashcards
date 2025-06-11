@@ -1,92 +1,133 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
   Link,
-} from 'react-router-dom'
-import fetchWithAuth from './api'
+} from 'react-router-dom';
+import fetchWithAuth    from './api';
 
-import NavBar        from './NavBar'
-import Auth          from './Auth'
-import CardContainer from './CardContainer'
-import CardDetail    from './CardDetail'
-import DeckDropdown  from './DeckDropdown'
-import Learn         from './Learn'
-import CreateCard from './CreateCard'
-import About from './About'
-import Info from './Info'
-import Generate from './Generate'
-import CreateDeck from './CreateDeck'
-import StudyAlarm from './StudyAlarm'
-import MainIcon from '../public/icon.png'
-import './styles/App.css'
+import NavBar           from './NavBar';
+import Auth             from './Auth';
+import CardContainer    from './CardContainer';
+import CardDetail       from './CardDetail';
+import DeckDropdown     from './DeckDropdown';
+import Learn            from './Learn';
+import CreateCard       from './CreateCard';
+import About            from './About';
+import Info             from './Info';
+import Generate         from './Generate';
+import CreateDeck       from './CreateDeck';
+import StudyAlarm       from './StudyAlarm';
+import MainIcon         from '../public/icon.png';
+import './styles/App.css';
 
 export default function App() {
-  const [token, setToken] = useState(localStorage.getItem('accessToken'))
-  const [decks, setDecks] = useState([])
-  const [selectedDeckId, setDeckId] = useState(null)
-  const [cards, setCards] = useState([])
-  const [selectedDifficulties, setSelectedDifficulties] = useState([])
+  const [token, setToken]                   = useState(localStorage.getItem('accessToken'));
+  const [decks, setDecks]                   = useState([]);
+  const [selectedDeckId, setDeckId]         = useState(null);
+  const [cards, setCards]                   = useState([]);
+  const [nextURL, setNextURL]               = useState(null);
+  const [prevURL, setPrevURL]               = useState(null);
+  const [baseParams, setBaseParams]         = useState('');
+  const [selectedDifficulties, setSelectedDifficulties] = useState([]);
 
-  // 1) Load decks when authenticated
+  /* ---------------- helpers ---------------- */
+  const goNext = () => {
+    if (!nextURL) return;
+    fetchWithAuth(nextURL)
+      .then(res => res.json())
+      .then(data => {
+        setCards(data.results);
+        setNextURL(data.next);
+        setPrevURL(data.previous);
+      })
+      .catch(console.error);
+  };
+
+  const goPrev = () => {
+    if (!prevURL) return;
+    fetchWithAuth(prevURL)
+      .then(res => res.json())
+      .then(data => {
+        setCards(data.results);
+        setNextURL(data.next);
+        setPrevURL(data.previous);
+      })
+      .catch(console.error);
+  };
+
+  /* ---------- 1) load decks once logged in ---------- */
   useEffect(() => {
-    if (!token) return
+    if (!token) return;
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/decks/`)
       .then(res => res.json())
       .then(setDecks)
-      .catch(console.error)
-  }, [token])
+      .catch(console.error);
+  }, [token]);
 
-  // 2) Load cards whenever deck changes
+  /* ---------- 2) first page of cards on deck/difficulty change ---------- */
   useEffect(() => {
-    if (!token) return
-    let url = `${import.meta.env.VITE_API_BASE_URL}/cards/`
-    if (selectedDeckId) url += `?deck=${selectedDeckId}`
-    fetchWithAuth(url)
+    if (!token) return;
+    const query = buildBaseQuery(selectedDeckId, selectedDifficulties);
+    setBaseParams(query);
+    fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cards/?${query}`)
       .then(res => res.json())
-      .then(setCards)
-      .catch(console.error)
-  }, [token, selectedDeckId])
+      .then(data => {
+        setCards(data.results);
+        setNextURL(data.next);
+        setPrevURL(data.previous);
+      })
+      .catch(console.error);
+  }, [token, selectedDeckId, selectedDifficulties]);
 
-  // 3) Difficulty filter setup
-  const ORDER = ['Easy', 'Medium', 'Hard']
-  const diffs = Array.from(new Set(cards.map(c => c.difficulty).filter(Boolean)))
-  const difficultyOptions = ORDER.filter(d => diffs.includes(d))
+  /* ---------- difficulty helpers ---------- */
+  const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
+
+  function buildBaseQuery(deckId, diffs) {
+    const p = new URLSearchParams();
+    if (deckId) p.append('deck', deckId);
+    diffs.forEach(d => p.append('difficulty', d));
+    return p.toString();
+  }
 
   const toggleDifficulty = diff =>
     setSelectedDifficulties(prev =>
-      prev.includes(diff) ? prev.filter(x => x !== diff) : [...prev, diff]
-    )
+      prev.includes(diff) ? prev.filter(x => x !== diff) : [...prev, diff],
+    );
 
-  const filteredCards = selectedDifficulties.length
-    ? cards.filter(c => selectedDifficulties.includes(c.difficulty))
-    : cards
+  const visibleCards =
+    selectedDifficulties.length > 0
+      ? cards.filter(c => selectedDifficulties.includes(c.difficulty))
+      : cards;
 
+  /* ---------------- JSX ---------------- */
   return (
     <Router>
       <NavBar
         onLogout={() => {
-          localStorage.removeItem('accessToken')
-          localStorage.removeItem('refreshToken')
-          setToken(null)
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          setToken(null);
+          setCards([]);
+          setNextURL(null);
+          setPrevURL(null);
         }}
         showLogout={!!token}
       />
-      <div className="main-content">
+
+      <div className="main-content pt-16">
         <Routes>
-          {/* PUBLIC */}
+          {/* ---------- PUBLIC ---------- */}
           <Route
             path="/login"
             element={
-              token
-                ? <Navigate to="/" replace />
-                : <Auth onLogin={tok => setToken(tok)} />
+              token ? <Navigate to="/" replace /> : <Auth onLogin={setToken} />
             }
           />
 
-          {/* PROTECTED */}
+          {/* ---------- PROTECTED ---------- */}
           {token ? (
             <>
               {/* Home */}
@@ -94,85 +135,96 @@ export default function App() {
                 path="/"
                 element={
                   <>
-                      <header className="header">
-                        <div className="icon-title">
-                          <img src={MainIcon} />
-                          <h1>Card.io</h1>
-                        </div>
-                      </header>
+                    {/* --- logo + title --- */}
+                    <div className="mx-auto max-w-7xl flex items-center justify-center gap-3 px-4 mb-6">
+                      <img src={MainIcon} alt="Card.io logo" className="h-20 w-20" />
+                      <h1 className="text-4xl font-semibold tracking-tight">Card.io</h1>
+                    </div>
 
-                      <div className="content">
-                        <div className="alarm">
-                          <StudyAlarm />
-                        </div>
-                        <div className="card-and-buttons">
-                          <div className="deck-row">
-                            <DeckDropdown
-                              decks={decks}
-                              selectedDeckId={selectedDeckId}
-                              onChange={setDeckId}
-                            />
-                            <Link to="/learn">
-                              <button className="learn-btn" disabled={!selectedDeckId}>
-                                Learn
-                              </button>
-                            </Link>
-                            <Link to="/cards/new">
-                              <button className="new-card-btn">+ New Card</button>
-                            </Link>
-                            <Link to="/decks/new">
-                              <button className="new-deck-btn">+ New Deck</button>
-                            </Link>
+                    {/* --- page content --- */}
+                    <div className="px-4">
+                      <div className="mx-auto max-w-7xl grid grid-cols-12 gap-6">
+                        {/* left sidebar */}
+                        <aside className="col-span-12 sm:col-span-4 lg:col-span-3 space-y-5">
+                          <DeckDropdown
+                            decks={decks}
+                            selectedDeckId={selectedDeckId}
+                            onChange={setDeckId}
+                          />
+
+                          <Link to="/learn" className="w-full">      {/* was className="block" */}
+                            <button
+                              className="btn btn-primary w-full"
+                              disabled={!selectedDeckId}
+                            >
+                              Learn
+                            </button>
+                          </Link>
+
+                          <Link to="/cards/new" className="w-full">
+                            <button className="btn w-full">+ New Card</button>
+                          </Link>
+
+                          <Link to="/decks/new" className="w-full">
+                            <button className="btn w-full">+ New Deck</button>
+                          </Link>
+
+                          <div className="flex flex-wrap gap-2">
+                            {DIFFICULTIES.map(diff => {
+                              const active = selectedDifficulties.includes(diff);
+                              return (
+                                <button
+                                  key={diff}
+                                  onClick={() => toggleDifficulty(diff)}
+                                  className={`px-3 py-1 rounded-full text-sm border transition
+                                    ${active
+                                      ? 'bg-indigo-600 text-white border-indigo-600'
+                                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                                >
+                                  {diff}
+                                </button>
+                              );
+                            })}
                           </div>
-                          <div className="filter-buttons">
-                            {difficultyOptions.map((diff) => (
-                              <button
-                                key={diff}
-                                className={`
-                                  filter-btn
-                                  ${diff.toLowerCase()}-btn
-                                  ${selectedDifficulties.includes(diff) ? "active" : ""}
-                                `}
-                                onClick={() => toggleDifficulty(diff)}
-                              >
-                                {diff}
-                              </button>
-                            ))}
+                        </aside>
+
+                        {/* main card column */}
+                        <main className="col-span-12 sm:col-span-8 lg:col-span-9">
+                          <CardContainer cardData={visibleCards} />
+
+                          <div className="mt-6 flex justify-center gap-4">
+                            <button
+                              className="btn btn-outline"
+                              onClick={goPrev}
+                              disabled={!prevURL}
+                            >
+                              « Prev
+                            </button>
+                            <button
+                              className="btn btn-outline"
+                              onClick={goNext}
+                              disabled={!nextURL}
+                            >
+                              Next »
+                            </button>
                           </div>
-                          <div className="card-container">
-                            <CardContainer cardData={filteredCards} />
-                          </div>
-                        </div>
+                        </main>
                       </div>
+                    </div>
                   </>
                 }
               />
-              {/* About */}
-              <Route path="/about" element={<About />} />
 
-              {/* Generate */}
-              <Route path="/generate" element={<Generate />} />
-
-              {/* Spaced-Repetition */}
-              <Route path="/info" element={<Info />} />
-
-              {/* Detail */}
-              <Route path="/cards/:id" element={<CardDetail />} />
-              
-              {/* Create Card */}
-              <Route path="/cards/new" element={<CreateCard decks={decks} />} />
-
-              {/* Create Deck */}
-              <Route path="/decks/new" element={<CreateDeck />} />
-
-              {/* Learn */}
+              {/* misc routes */}
+              <Route path="/about"      element={<About />} />
+              <Route path="/generate"   element={<Generate />} />
+              <Route path="/info"       element={<Info />} />
+              <Route path="/cards/:id"  element={<CardDetail />} />
+              <Route path="/cards/new"  element={<CreateCard decks={decks} />} />
+              <Route path="/decks/new"  element={<CreateDeck />} />
               <Route
                 path="/learn"
-                element={
-                  <Learn
-                    selectedDeckId={selectedDeckId} 
-                  />
-                }
+                element={<Learn selectedDeckId={selectedDeckId} />}
               />
             </>
           ) : (
@@ -181,5 +233,5 @@ export default function App() {
         </Routes>
       </div>
     </Router>
-  )
+  );
 }

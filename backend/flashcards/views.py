@@ -11,6 +11,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.db.models import Q
+
+from flashcards.pagination import CardCursorPagination
 from .models import Deck, Card, UserCard
 from .serializers import DeckSerializer, CardSerializer, RegisterSerializer, UserCardSerializer
 from .permissions import IsOwnerOrReadOnly, IsDeckOwnerOrReadOnly
@@ -28,6 +30,7 @@ class DeckViewSet(viewsets.ModelViewSet):
     queryset = Deck.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     serializer_class   = DeckSerializer
+    pagination_class = None
 
     def get_queryset(self):
         user = self.request.user
@@ -41,8 +44,9 @@ class DeckViewSet(viewsets.ModelViewSet):
 class CardViewSet(viewsets.ModelViewSet):
     queryset = Card.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly, IsDeckOwnerOrReadOnly]
+    pagination_class   = CardCursorPagination
     serializer_class   = CardSerializer
-    filterset_fields   = ['deck']
+    filterset_fields   = ['deck', 'difficulty']
     
     def get_queryset(self):
         user = self.request.user
