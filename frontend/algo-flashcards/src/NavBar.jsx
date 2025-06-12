@@ -15,6 +15,7 @@ export default function NavBar({ onLogout }) {
     { to: '/generate', label: 'Generate'  },
     { to: '/info',     label: 'Info'      },
     { to: '/about',    label: 'About'     },
+    { to: '/profile',  label: 'Profile'   }, // new
   ];
 
   return (

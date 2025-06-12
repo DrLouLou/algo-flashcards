@@ -21,6 +21,7 @@ import Generate      from './Generate';
 import CreateDeck    from './CreateDeck';
 // import StudyAlarm    from './StudyAlarm';
 import MainIcon      from '../public/icon.png';
+import Profile           from './Profile';
 import './styles/App.css';
 
 export default function App() {
@@ -274,8 +275,13 @@ export default function App() {
               <Route path="/decks/new"  element={<CreateDeck />} />
               <Route
                 path="/learn"
-                element={<Learn selectedDeckId={selectedDeckId} />}
+                element={
+                  <Learn
+                    selectedDeckId={selectedDeckId} 
+                  />
+                }
               />
+              <Route path="/profile" element={<Profile />} />
             </>
           ) : (
             <Route path="*" element={<Navigate to="/login" replace />} />

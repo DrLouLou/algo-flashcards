@@ -11,6 +11,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.db.models import Q
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import get_user_model
 
 from flashcards.pagination import CardCursorPagination
 from .models import Deck, Card, UserCard
@@ -35,8 +38,11 @@ class DeckViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated:
-            return Deck.objects.filter(Q(owner=user) | Q(owner__isnull=True))
-        return Deck.objects.filter(owner__isnull=True)
+            # Show user's own decks, global decks, and shared decks
+            return Deck.objects.filter(
+                Q(owner=user) | Q(owner__isnull=True) | Q(shared=True)
+            ).distinct()
+        return Deck.objects.filter(Q(owner__isnull=True) | Q(shared=True)).distinct()
 
     def perform_create(self, serializer):
             serializer.save(owner=self.request.user)
@@ -202,3 +208,12 @@ Do **not** wrap it in markdown or include any commentary—just the raw JSON.
             }, status=status.HTTP_502_BAD_GATEWAY)
 
         return Response(data, status=status.HTTP_200_OK)
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        user = request.user
+        return Response({
+            'username': user.username,
+            'email': user.email,
+        })

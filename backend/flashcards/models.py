@@ -13,6 +13,7 @@ class Deck(models.Model):
         null=True,
         blank=True
     )
+    shared = models.BooleanField(default=False, help_text='If true, this deck is visible to all users.')
 
     def __str__(self):
         return self.name

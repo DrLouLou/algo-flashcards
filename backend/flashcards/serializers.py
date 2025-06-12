@@ -36,10 +36,11 @@ class CardSerializer(serializers.ModelSerializer):
 class DeckSerializer(serializers.ModelSerializer):
     cards = CardSerializer(many=True, read_only=True)
     owner = serializers.ReadOnlyField(source='owner.username')
+    shared = serializers.BooleanField(required=False)
 
     class Meta:
         model  = Deck
-        fields = ['id','name','description','created_at','owner','cards']
+        fields = ['id','name','description','created_at','owner','cards','shared']
 
 class UserCardSerializer(serializers.ModelSerializer):
     # embed the card data
