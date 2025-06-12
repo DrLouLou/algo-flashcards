@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
 from rest_framework import routers
-from flashcards.views import DeckViewSet, CardViewSet, RegisterView, UserCardViewSet, CardGenerationAPIView
+from flashcards.views import DeckViewSet, CardViewSet, RegisterView, UserCardViewSet, CardGenerationAPIView, MeView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -44,6 +44,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path("api/generate_card/", CardGenerationAPIView.as_view(), name="generate-card"),
+    path('api/me/', MeView.as_view(), name='me'),
 ]
 
 from django.urls import path, include
