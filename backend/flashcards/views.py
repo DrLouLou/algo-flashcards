@@ -79,6 +79,7 @@ class CardViewSet(viewsets.ModelViewSet):
 class UserCardViewSet(viewsets.ModelViewSet):
     serializer_class = UserCardSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None   # always return full list
 
     def get_queryset(self):
         qs = UserCard.objects.filter(user=self.request.user)
