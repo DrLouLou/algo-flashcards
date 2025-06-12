@@ -21,6 +21,7 @@ import Generate from './Generate'
 import CreateDeck from './CreateDeck'
 import StudyAlarm from './StudyAlarm'
 import MainIcon from '../public/icon.png'
+import Profile           from './Profile';
 import './styles/App.css'
 
 export default function App() {
@@ -174,6 +175,7 @@ export default function App() {
                   />
                 }
               />
+              <Route path="/profile" element={<Profile />} />
             </>
           ) : (
             <Route path="*" element={<Navigate to="/login" replace />} />

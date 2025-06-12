@@ -5,19 +5,25 @@ export default function NavBar({ onLogout }) {
   const navigate = useNavigate()
 
   const handleLogout = () => {
-    // Clear token and redirect to login
-    localStorage.removeItem('accessToken')
-    onLogout(null)
-    navigate('/login')
-  }
+    localStorage.removeItem('accessToken');
+    onLogout(null);
+    navigate('/login');
+  };
+
+  const menu = [
+    { to: '/',         label: 'Home'      },
+    { to: '/generate', label: 'Generate'  },
+    { to: '/info',     label: 'Info'      },
+    { to: '/about',    label: 'About'     },
+    { to: '/profile',  label: 'Profile'   }, // new
+  ];
 
   return (
     <nav className="navbar">
       <div className="navbar-left">
-        <Link to="/">Home</Link>
-        <Link to="/generate">Generate</Link>
-        <Link to="/info">Info</Link>
-        <Link to="/about">About</Link>
+        {menu.map(({ to, label }) => (
+          <Link key={to} to={to}>{label}</Link>
+        ))}
       </div>
       <div className="navbar-right">
         <button onClick={handleLogout} className="logout-btn">
