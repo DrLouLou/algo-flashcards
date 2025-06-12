@@ -1,24 +1,19 @@
 // src/DeckDropdown.jsx
-import React from 'react'
+import React from 'react';
 
 export default function DeckDropdown({ decks, selectedDeckId, onChange }) {
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div className="relative w-full">
+      {/* native <select> */}
       <select
         value={selectedDeckId || ''}
         onChange={e => onChange(e.target.value || null)}
-        style={{
-          appearance: 'none',
-          WebkitAppearance: 'none',
-          MozAppearance: 'none',
-          padding: '0.5rem 2rem 0.5rem 0.75rem',
-          border: '1px solid #ccc',
-          borderRadius: '0.25rem',
-          backgroundColor: '#fff',
-          fontSize: '1rem',
-          lineHeight: '1.5',
-          cursor: 'pointer',
-        }}
+        className="
+          block w-full appearance-none rounded-md border border-gray-300
+          bg-white py-2 pl-3 pr-10 text-sm text-gray-700 shadow-sm
+          focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500
+          cursor-pointer
+        "
       >
         <option value="">All Decks</option>
         {decks.map(d => (
@@ -27,21 +22,17 @@ export default function DeckDropdown({ decks, selectedDeckId, onChange }) {
           </option>
         ))}
       </select>
-      {/* Custom dropdown arrow */}
-      <div
-        style={{
-          pointerEvents: 'none',
-          position: 'absolute',
-          right: '0.75rem',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: 0,
-          height: 0,
-          borderLeft: '0.4rem solid transparent',
-          borderRight: '0.4rem solid transparent',
-          borderTop: '0.4rem solid #333',
-        }}
-      />
+
+      {/* arrow icon */}
+      <svg
+        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
     </div>
-  )
+  );
 }

@@ -1,5 +1,4 @@
-/* grid container for all cards */
-.card-list {
+/* .card-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
@@ -8,7 +7,6 @@
     list-style: none;
   }
   
-/* each card wrapper */
 .card-item {
   background-color: #fff;
   border-radius: 0.5rem;
@@ -17,27 +15,23 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* lift on hover */
 .card-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* title styling */
 .card-item h3 {
   margin-top: 0;
   font-size: 1.25rem;
   color: #333;
 }
 
-/* paragraph styling */
 .card-item p {
   margin: 0.5rem 0;
   color: #555;
   line-height: 1.4;
 }
 
-/* code block for pseudocode */
 .card-item code {
   display: block;
   background: #f7f7f7;
@@ -53,4 +47,4 @@
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   list-style: none;
   padding: 0;
-}
+} */

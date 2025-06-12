@@ -8,7 +8,6 @@
 
 .main-content {
   padding-top: var(--navbar-height);
-  /* min-height: calc(100vh - var(--navbar-height)); */
 }
 
 .deck-row {
@@ -50,16 +49,12 @@
   box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* align buttons right */
 .filter-buttons {
   display: flex;
   justify-content: flex-end;
   margin-right: 2vw;
-  /* gap: 0.5rem; */
-  /* margin: 1rem 0; */
 }
 
-/* base toggle button */
 .filter-btn {
   background: #fff;
   border: none;
@@ -69,7 +64,6 @@
   position: relative;
 }
 
-/* colored text only */
 .easy-btn {
   color: #28a745;
 }
@@ -80,7 +74,6 @@
   color: #dc3545;
 }
 
-/* active underline */
 .filter-btn.active::after {
   content: '';
   position: absolute;
@@ -92,16 +85,14 @@
   border-radius: 2px;
 }
 
-/* hover opacity cue */
 .filter-btn:hover {
   opacity: 0.8;
 }
 
-.content {
+/* .content {
   display: flex;
   flex: col;
   position: relative;
-  /* align-items: center; */
 }
 
 .card-container {
@@ -110,7 +101,7 @@
   align-items: flex-start;
   gap: 1rem;
   margin-right: 5vh;
-}
+} */
 
 .alarm {
   margin-top: 0;

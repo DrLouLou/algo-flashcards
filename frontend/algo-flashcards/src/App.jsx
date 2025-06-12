@@ -6,42 +6,43 @@ import {
   Navigate,
   Link,
 } from 'react-router-dom';
-import fetchWithAuth    from './api';
+import fetchWithAuth from './api';
 
-import NavBar           from './NavBar';
-import Auth             from './Auth';
-import CardContainer    from './CardContainer';
-import CardDetail       from './CardDetail';
-import DeckDropdown     from './DeckDropdown';
-import Learn            from './Learn';
-import CreateCard       from './CreateCard';
-import About            from './About';
-import Info             from './Info';
-import Generate         from './Generate';
-import CreateDeck       from './CreateDeck';
-import StudyAlarm       from './StudyAlarm';
-import MainIcon         from '../public/icon.png';
+import NavBar        from './NavBar';
+import Auth          from './Auth';
+import CardContainer from './CardContainer';
+import CardDetail    from './CardDetail';
+import DeckDropdown  from './DeckDropdown';
+import Learn         from './Learn';
+import CreateCard    from './CreateCard';
+import About         from './About';
+import Info          from './Info';
+import Generate      from './Generate';
+import CreateDeck    from './CreateDeck';
+// import StudyAlarm    from './StudyAlarm';
+import MainIcon      from '../public/icon.png';
 import './styles/App.css';
 
 export default function App() {
-  const [token, setToken]                   = useState(localStorage.getItem('accessToken'));
-  const [decks, setDecks]                   = useState([]);
-  const [selectedDeckId, setDeckId]         = useState(null);
-  const [cards, setCards]                   = useState([]);
-  const [nextURL, setNextURL]               = useState(null);
-  const [prevURL, setPrevURL]               = useState(null);
-  const [baseParams, setBaseParams]         = useState('');
+  /* ---------- state ---------- */
+  const [token, setToken]                     = useState(localStorage.getItem('accessToken'));
+  const [decks, setDecks]                     = useState([]);
+  const [selectedDeckId, setDeckId]           = useState(null);
+  const [cards, setCards]                     = useState([]);
+  const [nextURL, setNextURL]                 = useState(null);
+  const [prevURL, setPrevURL]                 = useState(null);
+  const [baseParams, setBaseParams]           = useState('');
   const [selectedDifficulties, setSelectedDifficulties] = useState([]);
 
-  /* ---------------- helpers ---------------- */
+  /* ---------- helpers ---------- */
   const goNext = () => {
     if (!nextURL) return;
     fetchWithAuth(nextURL)
-      .then(res => res.json())
-      .then(data => {
-        setCards(data.results);
-        setNextURL(data.next);
-        setPrevURL(data.previous);
+      .then(r => r.json())
+      .then(d => {
+        setCards(d.results);
+        setNextURL(d.next);
+        setPrevURL(d.previous);
       })
       .catch(console.error);
   };
@@ -49,35 +50,35 @@ export default function App() {
   const goPrev = () => {
     if (!prevURL) return;
     fetchWithAuth(prevURL)
-      .then(res => res.json())
-      .then(data => {
-        setCards(data.results);
-        setNextURL(data.next);
-        setPrevURL(data.previous);
+      .then(r => r.json())
+      .then(d => {
+        setCards(d.results);
+        setNextURL(d.next);
+        setPrevURL(d.previous);
       })
       .catch(console.error);
   };
 
-  /* ---------- 1) load decks once logged in ---------- */
+  /* ---------- load decks ---------- */
   useEffect(() => {
     if (!token) return;
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/decks/`)
-      .then(res => res.json())
+      .then(r => r.json())
       .then(setDecks)
       .catch(console.error);
   }, [token]);
 
-  /* ---------- 2) first page of cards on deck/difficulty change ---------- */
+  /* ---------- load cards ---------- */
   useEffect(() => {
     if (!token) return;
     const query = buildBaseQuery(selectedDeckId, selectedDifficulties);
     setBaseParams(query);
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cards/?${query}`)
-      .then(res => res.json())
-      .then(data => {
-        setCards(data.results);
-        setNextURL(data.next);
-        setPrevURL(data.previous);
+      .then(r => r.json())
+      .then(d => {
+        setCards(d.results);
+        setNextURL(d.next);
+        setPrevURL(d.previous);
       })
       .catch(console.error);
   }, [token, selectedDeckId, selectedDifficulties]);
@@ -92,17 +93,27 @@ export default function App() {
     return p.toString();
   }
 
-  const toggleDifficulty = diff =>
-    setSelectedDifficulties(prev =>
-      prev.includes(diff) ? prev.filter(x => x !== diff) : [...prev, diff],
-    );
-
+  const toggleDifficulty = diff => {
+    setSelectedDifficulties(prev => {
+      const next = prev.includes(diff)
+        ? prev.filter(d => d !== diff)      // remove
+        : [...prev, diff];                  // add
+  
+      // if *all* or *none* are now selected, treat as "no filter"
+      return next.length === 0 || next.length === DIFFICULTIES.length
+        ? []
+        : next;
+    });
+  };
+  
   const visibleCards =
-    selectedDifficulties.length > 0
-      ? cards.filter(c => selectedDifficulties.includes(c.difficulty))
-      : cards;
+  selectedDifficulties.length === 0   // ← all / none both mean "show all"
+    ? cards
+    : cards.filter(c =>
+        selectedDifficulties.includes(c.difficulty),
+      );
 
-  /* ---------------- JSX ---------------- */
+  /* ---------- render ---------- */
   return (
     <Router>
       <NavBar
@@ -123,7 +134,9 @@ export default function App() {
           <Route
             path="/login"
             element={
-              token ? <Navigate to="/" replace /> : <Auth onLogin={setToken} />
+              token
+                ? <Navigate to="/" replace />
+                : <Auth onLogin={setToken} />
             }
           />
 
@@ -135,51 +148,88 @@ export default function App() {
                 path="/"
                 element={
                   <>
-                    {/* --- logo + title --- */}
+                    {/* logo + title */}
                     <div className="mx-auto max-w-7xl flex items-center justify-center gap-3 px-4 mb-6">
                       <img src={MainIcon} alt="Card.io logo" className="h-20 w-20" />
                       <h1 className="text-4xl font-semibold tracking-tight">Card.io</h1>
                     </div>
 
-                    {/* --- page content --- */}
+                    {/* page content */}
                     <div className="px-4">
                       <div className="mx-auto max-w-7xl grid grid-cols-12 gap-6">
-                        {/* left sidebar */}
+                        {/* sidebar */}
                         <aside className="col-span-12 sm:col-span-4 lg:col-span-3 space-y-5">
-                          <DeckDropdown
-                            decks={decks}
-                            selectedDeckId={selectedDeckId}
-                            onChange={setDeckId}
-                          />
+                          <div className="space-y-3">
+                            {/* deck selector */}
+                            <div className="relative">
+                              <DeckDropdown
+                                decks={decks}
+                                selectedDeckId={selectedDeckId}
+                                onChange={setDeckId}
+                              />
+                            </div>
 
-                          <Link to="/learn" className="w-full">      {/* was className="block" */}
-                            <button
-                              className="btn btn-primary w-full"
-                              disabled={!selectedDeckId}
-                            >
-                              Learn
-                            </button>
-                          </Link>
+                            {/* learn */}
+                            <Link to="/learn" className="w-full block">
+                              <button
+                                disabled={!selectedDeckId}
+                                className="
+                                  w-full rounded-md px-4 py-2 text-sm font-medium shadow transition
+                                  text-gray-700 bg-white border border-gray-300 hover:bg-gray-50
+                                  disabled:opacity-50 disabled:hover:bg-white disabled:cursor-not-allowed
+                                "
+                              >
+                                Learn
+                              </button>
+                            </Link>
 
-                          <Link to="/cards/new" className="w-full">
-                            <button className="btn w-full">+ New Card</button>
-                          </Link>
+                            {/* new card */}
+                            <Link to="/cards/new" className="w-full block">
+                              <button className="
+                                w-full rounded-md px-4 py-2 text-sm font-medium shadow
+                                text-gray-700 bg-white border border-gray-300
+                                hover:bg-gray-50
+                                transition hover:shadow-lg
+                              ">
+                                + New Card
+                              </button>
+                            </Link>
 
-                          <Link to="/decks/new" className="w-full">
-                            <button className="btn w-full">+ New Deck</button>
-                          </Link>
+                            {/* new deck */}
+                            <Link to="/decks/new" className="w-full block">
+                              <button className="
+                                w-full rounded-md px-4 py-2 text-sm font-medium shadow
+                                transition
+                                text-gray-700 bg-white border border-gray-300
+                                hover:bg-gray-50
+                              ">
+                                + New Deck
+                              </button>
+                            </Link>
+                          </div>
 
+                          {/* difficulty filter */}
                           <div className="flex flex-wrap gap-2">
                             {DIFFICULTIES.map(diff => {
-                              const active = selectedDifficulties.includes(diff);
+                              const active = selectedDifficulties.length === 0 || selectedDifficulties.includes(diff);
+                              const COLOR = {
+                                Easy:   '#28a745',
+                                Medium: '#ffc107',
+                                Hard:   '#dc3545',
+                              }[diff];
                               return (
                                 <button
                                   key={diff}
                                   onClick={() => toggleDifficulty(diff)}
-                                  className={`px-3 py-1 rounded-full text-sm border transition
-                                    ${active
-                                      ? 'bg-indigo-600 text-white border-indigo-600'
-                                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                                  className={`
+                                    px-3 py-1 rounded-full text-sm border transition
+                                    ${active ? 'text-white' : 'text-gray-700 hover:bg-gray-50'}
+                                  `}
+                                  style={
+                                    active
+                                      ? { backgroundColor: COLOR, borderColor: COLOR }
+                                      : { borderColor: '#d1d5db' } 
+                                  }
                                 >
                                   {diff}
                                 </button>
@@ -188,7 +238,7 @@ export default function App() {
                           </div>
                         </aside>
 
-                        {/* main card column */}
+                        {/* main column */}
                         <main className="col-span-12 sm:col-span-8 lg:col-span-9">
                           <CardContainer cardData={visibleCards} />
 
