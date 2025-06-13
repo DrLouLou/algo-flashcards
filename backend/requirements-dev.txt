@@ -1,0 +1,7 @@
+pytest
+django-debug-toolbar
+pytest-django
+black
+flake8
+mypy
+pre-commit
