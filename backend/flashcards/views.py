@@ -62,10 +62,11 @@ class CardViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             qs = qs.filter(
                 Q(deck__owner__isnull=True) |    # global decks
-                Q(deck__owner=user)              # your own decks
-            )
+                Q(deck__owner=user) |            # your own decks
+                Q(deck__shared=True)             # shared decks
+            ).distinct()
         else:
-            qs = qs.filter(deck__owner__isnull=True)
+            qs = qs.filter(Q(deck__owner__isnull=True) | Q(deck__shared=True)).distinct()
 
         # 2) if the frontend passed a ?deck=, apply that
         deck_id = self.request.query_params.get('deck')
