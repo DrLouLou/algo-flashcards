@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import fetchWithAuth from './api'
 import './styles/CreateDeck.css'
 
-export default function CreateDeck() {
+export default function CreateDeck({reloadDecks}) {
   const [form, setForm] = useState({ name: '', description: '' })
   const [error, setError] = useState(null)
   const nav = useNavigate()
@@ -31,6 +31,7 @@ export default function CreateDeck() {
       }
       const newDeck = await res.json()
       // go pick that deck in your dropdown
+      reloadDecks();
       nav('/', { state: { selectDeck: newDeck.id } })
     } catch (err) {
       setError(err.message)

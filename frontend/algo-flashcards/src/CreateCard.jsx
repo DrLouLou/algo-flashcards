@@ -5,7 +5,7 @@ import Editor from '@monaco-editor/react';
 import TagEditor from './TagEditor';
 
 
-export default function CreateCard({ decks }) {
+export default function CreateCard({ decks, reloadCards }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     deck: decks.length ? decks[0].id : '',
@@ -42,6 +42,7 @@ export default function CreateCard({ decks }) {
         },
       );
       if (!res.ok) throw new Error(JSON.stringify(await res.json()));
+      reloadCards();
       navigate('/');
     } catch (err) {
       setError(err.message);
@@ -137,10 +138,10 @@ export default function CreateCard({ decks }) {
         {/* TAGS */}
         <div className="flex flex-col col-span-full">
           <label className="mb-1 text-sm font-medium text-gray-700">Tags</label>
-          <TagEditor
+          {/* <TagEditor
             tags={form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
             onChange={handleTagsChange}
-          />
+          /> */}
         </div>
 
         {/* buttons */}

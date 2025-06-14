@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -64,18 +64,25 @@ export default function App() {
   };
 
   /* ---------- load decks ---------- */
-  useEffect(() => {
+  const reloadDecks = useCallback(() => {
     if (!token) return;
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/decks/`)
       .then(r => r.json())
       .then(setDecks)
       .catch(console.error);
-  }, [token]);
+  }, [token])
+
+  useEffect(reloadDecks, [reloadDecks]);
 
   /* ---------- load cards ---------- */
-  useEffect(() => {
+  const reloadCards = useCallback(() => {
     if (!token) return;
-    const query = buildBaseQuery(selectedDeckId, selectedDifficulties, selectedTags, null);
+    const query = buildBaseQuery(
+      selectedDeckId,
+      selectedDifficulties,
+      selectedTags,
+      null
+    );
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cards/?${query}`)
       .then(r => r.json())
       .then(d => {
@@ -85,6 +92,8 @@ export default function App() {
       })
       .catch(console.error);
   }, [token, selectedDeckId, selectedDifficulties, selectedTags]);
+
+  useEffect(reloadCards, [reloadCards]);
 
   /* ---------- difficulty helpers ---------- */
   const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
@@ -101,10 +110,9 @@ export default function App() {
   const toggleDifficulty = diff => {
     setSelectedDifficulties(prev => {
       const next = prev.includes(diff)
-        ? prev.filter(d => d !== diff)      // remove
-        : [...prev, diff];                  // add
+        ? prev.filter(d => d !== diff)
+        : [...prev, diff];
   
-      // if *all* or *none* are now selected, treat as "no filter"
       return next.length === 0 || next.length === DIFFICULTIES.length
         ? []
         : next;
@@ -117,7 +125,6 @@ export default function App() {
     (selectedDifficulties.length === 0 ? cards : cards.filter(c => selectedDifficulties.includes(c.difficulty)))
       .filter(c => selectedTags.length === 0 || (c.tags && selectedTags.every(tag => c.tags.split(',').includes(tag))));
 
-  /* ---------- render ---------- */
   return (
     <SettingsProvider>
       <Router>
@@ -286,8 +293,8 @@ export default function App() {
                 <Route path="/generate"   element={<Generate />} />
                 <Route path="/info"       element={<Info />} />
                 <Route path="/cards/:id"  element={<CardDetail />} />
-                <Route path="/cards/new"  element={<CreateCard decks={decks} />} />
-                <Route path="/decks/new"  element={<CreateDeck />} />
+                <Route path="/cards/new"  element={<CreateCard decks={decks} reloadCards={reloadCards}/>} />
+                <Route path="/decks/new"  element={<CreateDeck reloadDecks={reloadDecks} />} />
                 <Route
                   path="/learn"
                   element={
