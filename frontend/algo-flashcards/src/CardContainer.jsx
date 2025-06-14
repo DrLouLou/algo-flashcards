@@ -15,6 +15,14 @@ function CardContainer({ cardData = [] }) {
           className="rounded-lg bg-white shadow transition hover:shadow-lg"
         >
           <Card card={card} />
+          {/* Show tags below card preview */}
+          {card.tags && card.tags.split(',').filter(Boolean).length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2 px-2 pb-2">
+              {card.tags.split(',').filter(Boolean).map(tag => (
+                <span key={tag} className="tag bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs">{tag}</span>
+              ))}
+            </div>
+          )}
         </li>
       ))}
     </ul>

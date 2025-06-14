@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import fetchWithAuth from './api'
 import './styles/CardDetail.css'
+import TagEditor from './TagEditor'
 
 export default function CardDetail() {
   const { id } = useParams()
@@ -62,14 +63,60 @@ export default function CardDetail() {
     setIsFlipped(f => !f)
     setShowHint(false)
   }
+  // Tag change handler
+  const handleTagsChange = tags => {
+    setFormData(prev => ({ ...prev, tags: tags.join(',') }));
+  };
+  // Add status update handler (if userCardId/status available)
+  const updateStatus = (status) => {
+    if (!formData.userCardId) return;
+    fetchWithAuth(`${API}/usercards/${formData.userCardId}/set_status/`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+      .then(r => r.ok ? r.json() : Promise.reject('Status update failed'))
+      .then(() => setFormData(f => ({ ...f, status })))
+      .catch(console.error);
+  };
 
   return (
     <div className="">
-        <Link to={'/'}>
-            <button>Back</button>
-        </Link>
-        <div className="card-detail container">
+      <Link to={'/'}>
+        <button>Back</button>
+      </Link>
+      <div className="card-detail container">
         <h1>{formData.problem}</h1>
+        {/* TAGS: show in both modes */}
+        <div className="mb-4">
+          <strong>Tags:</strong>{' '}
+          {isEditing ? (
+            <TagEditor
+              tags={formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
+              onChange={tagsArr => handleTagsChange(tagsArr)}
+            />
+          ) : (
+            (formData.tags || '').split(',').filter(Boolean).map(tag => (
+              <span key={tag} className="tag">{tag}</span>
+            ))
+          )}
+        </div>
+        {/* Status controls if available */}
+        {formData.status && (
+          <div className="mb-4 flex gap-2">
+            <strong>Status:</strong>
+            {['new','review','known'].map(s => (
+              <button
+                key={s}
+                className={`px-3 py-1 rounded-full border text-xs ${formData.status === s ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+                onClick={() => updateStatus(s)}
+                disabled={formData.status === s}
+              >
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
 
         {isEditing ? (
             // EDIT MODE: show all fields as inputs

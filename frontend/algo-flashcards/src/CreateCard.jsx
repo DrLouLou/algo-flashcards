@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import fetchWithAuth from './api';
 import Editor from '@monaco-editor/react';
+import TagEditor from './TagEditor';
 
 
 export default function CreateCard({ decks }) {
@@ -15,12 +16,18 @@ export default function CreateCard({ decks }) {
     pseudo: '',
     solution: '',
     complexity: '',
+    tags: '',
   });
   const [error, setError] = useState(null);
 
   const handleChange = e => {
     const { name, value } = e.target;
     setForm(f => ({ ...f, [name]: value }));
+  };
+
+  // Tag change handler
+  const handleTagsChange = tagsArr => {
+    setForm(f => ({ ...f, tags: tagsArr.join(',') }));
   };
 
   const handleSubmit = async e => {
@@ -125,6 +132,15 @@ export default function CreateCard({ decks }) {
                 }}
                 />
             </div>
+        </div>
+
+        {/* TAGS */}
+        <div className="flex flex-col col-span-full">
+          <label className="mb-1 text-sm font-medium text-gray-700">Tags</label>
+          <TagEditor
+            tags={form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
+            onChange={handleTagsChange}
+          />
         </div>
 
         {/* buttons */}
