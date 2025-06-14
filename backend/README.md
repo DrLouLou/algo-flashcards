@@ -56,3 +56,8 @@ python manage.py import_anki anki_cards.txt
 
 delete db.sqlite file
 run python manage.py migrate
+
+# For running Docker
+
+docker build -t my-backend:latest .
+docker run --name my-backend -p 8000:8000 my-backend:latest
