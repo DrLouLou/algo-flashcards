@@ -28,7 +28,11 @@ Learn algorithms the most efficient way
 
 ### 3. Start Backend & Database
 ```zsh
-docker compose up backend db
+if change in backend do:
+  docker-compose down
+  docker-compose build
+regardless do: 
+  docker compose up backend db
 ```
 - Backend API: http://localhost:8000
 - Postgres DB: localhost:5432 (see backend/.env for credentials)

@@ -61,3 +61,7 @@ run python manage.py migrate
 
 docker build -t my-backend:latest .
 docker run --name my-backend -p 8000:8000 my-backend:latest
+
+# Or to start the container in attached mode if it's already running
+
+docker start -ai my-backend
