@@ -6,6 +6,7 @@ import fetchWithAuth from './api'
 import ChartDropdown from './ChartDropdown.jsx'
 import { useSettings } from './SettingsContext';
 import ProgressBar from './ProgressBar.jsx';
+import StudyAlarm from './StudyAlarm';
 
 import './styles/Learn.css'
 
@@ -24,6 +25,13 @@ export default function Learn({ selectedDeckId }) {
   const [userInput, setUserInput] = useState('');
   const [showAnswerInput, setShowAnswerInput] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
+  // Find current deck name
+  const [deckName, setDeckName] = useState('');
+  const [totalCards, setTotalCards] = useState(0);
+  // Add a state to control if answer is revealed
+  const [revealed, setRevealed] = useState(false);
+  // Add a loading state for stats and progress
+  const [loading, setLoading] = useState(true);
 
   // navigation handlers
   const goNext = useCallback(() => {
@@ -32,6 +40,7 @@ export default function Learn({ selectedDeckId }) {
     setShowHint(false);
     setUserInput('');
     setShowAnswerInput(true);
+    setRevealed(false);
   }, [queue.length]);
   const goPrev = useCallback(() => {
     setCurrentIdx(i => (i > 0 ? i - 1 : i));
@@ -39,6 +48,7 @@ export default function Learn({ selectedDeckId }) {
     setShowHint(false);
     setUserInput('');
     setShowAnswerInput(true);
+    setRevealed(false);
   }, []);
 
   // 1) fetch the “due now” queue
@@ -81,11 +91,28 @@ export default function Learn({ selectedDeckId }) {
       .catch(console.error)
   }, [API, selectedDeckId])
 
+  // Helper to fetch total number of cards in the deck (regardless of rating)
+  const fetchTotalCards = useCallback(() => {
+    if (!selectedDeckId) return Promise.resolve();
+    const url = `${API}/usercards/?deck=${selectedDeckId}`;
+    return fetchWithAuth(url)
+      .then(r => r.json())
+      .then(raw => {
+        const items = Array.isArray(raw) ? raw : raw.results || [];
+        setTotalCards(items.length);
+      })
+      .catch(() => setTotalCards(0));
+  }, [API, selectedDeckId])
+
   // 3) on mount or deck change
   useEffect(() => {
-    fetchQueue()
-    fetchDistribution()
-  }, [fetchQueue, fetchDistribution])
+    setLoading(true);
+    Promise.all([
+      fetchQueue(),
+      fetchDistribution(),
+      fetchTotalCards()
+    ]).then(() => setLoading(false));
+  }, [fetchQueue, fetchDistribution, fetchTotalCards])
 
   // swipe support (left/right)
   useEffect(() => {
@@ -97,11 +124,70 @@ export default function Learn({ selectedDeckId }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [goNext, goPrev]);
 
+  // Get deck name on mount or when selectedDeckId changes
+  useEffect(() => {
+    if (!selectedDeckId) {
+      setDeckName('All Decks');
+      return;
+    }
+    // Try to get deck name from localStorage or API
+    fetchWithAuth(`${API}/decks/${selectedDeckId}/`)
+      .then(r => r.ok ? r.json() : null)
+      .then(deck => setDeckName(deck?.name || ''))
+      .catch(() => setDeckName(''));
+  }, [selectedDeckId, API]);
+
+  // Helper to reset all state to initial values
+  const resetLearnState = useCallback(() => {
+    setQueue([]);
+    setDistribution({ none: 0, again: 0, hard: 0, good: 0, easy: 0 });
+    setIsFlipped(false);
+    setShowHint(false);
+    setShowConfirm(false);
+    setUserInput('');
+    setShowAnswerInput(true);
+    setCurrentIdx(0);
+    setDeckName('');
+    setTotalCards(0);
+    setRevealed(false);
+    setLoading(true);
+  }, []);
+
+  // Reset all state on mount (including after refresh)
+  useEffect(() => {
+    resetLearnState();
+  }, [resetLearnState, selectedDeckId]);
+
+  // Ensure all state is reset on unmount (leaving Learn mode)
+  useEffect(() => {
+    return () => {
+      resetLearnState();
+    };
+  }, [resetLearnState]);
+
   // nothing due?
+  if (loading) {
+    return (
+      <div className="learn-page">
+        <div className="learn-header" style={{display:'flex',alignItems:'center',gap:24,marginBottom:16}}>
+          <StudyAlarm />
+          <h2 className="text-xl font-semibold mb-2" style={{margin:0}}>{deckName ? `Learning: ${deckName}` : 'No Deck Selected'}</h2>
+        </div>
+        <hr style={{marginBottom:16}}/>
+        <p>Loading cards and stats…</p>
+      </div>
+    );
+  }
+
   if (queue.length === 0) {
     return (
       <div className="learn-page">
-        <p>No cards available to learn.</p>
+        <div className="learn-header" style={{display:'flex',alignItems:'center',gap:24,marginBottom:16}}>
+          <StudyAlarm />
+          <h2 className="text-xl font-semibold mb-2" style={{margin:0}}>{deckName ? `Learning: ${deckName}` : 'No Deck Selected'}</h2>
+        </div>
+        <hr style={{marginBottom:16}}/>
+        <p>No cards available to learn in this deck. Try selecting a different deck or adding new cards.</p>
         <button onClick={() => navigate(-1)} className="back-btn">
           Back
         </button>
@@ -109,52 +195,81 @@ export default function Learn({ selectedDeckId }) {
     )
   }
 
+  // Always derive safeIdx and card just before rendering
   // Clamp currentIdx if queue shrinks (defensive, in case of async updates)
-  const safeIdx = Math.min(currentIdx, queue.length - 1);
+  const safeIdx = Math.max(0, Math.min(currentIdx, queue.length - 1));
   const card = queue[safeIdx] || queue[0];
 
   // handle rating
   function handleRating(rating) {
-    // Remove current card from queue and reset index if needed
-    setQueue(q => {
-      const newQ = q.filter((_, i) => i !== currentIdx);
-      // If last card, reset to 0; else, stay at same index
-      setCurrentIdx(idx => (newQ.length === 0 ? 0 : Math.min(idx, newQ.length - 1)));
-      return newQ;
-    });
-    setIsFlipped(false)
-    setShowHint(false)
-
+    // Save the current index before queue update
+    const prevIdx = currentIdx;
     fetchWithAuth(`${API}/usercards/${card.userCardId}/`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ last_rating: rating }),
     })
       .then(r => (r.ok ? r.json() : Promise.reject('Save failed')))
-      .then(() => Promise.all([fetchQueue(), fetchDistribution()]))
-      .catch(console.error)
+      .then(() => {
+        // Fetch the new queue, then update currentIdx and stats
+        fetchQueue().then(() => {
+          setQueue(q => {
+            let nextIdx = prevIdx;
+            if (prevIdx >= q.length) nextIdx = Math.max(0, q.length - 1);
+            else if (q.length > 1) nextIdx = Math.min(prevIdx, q.length - 1);
+            setCurrentIdx(nextIdx);
+            // Immediately update stats after queue update
+            fetchDistribution();
+            fetchTotalCards();
+            setShowAnswerInput(true);
+            setRevealed(false);
+            setUserInput('');
+            return q;
+          });
+        });
+      })
+      .catch(console.error);
+    setIsFlipped(false);
+    setShowHint(false);
   }
 
+  const handleReveal = (e) => {
+    e.preventDefault();
+    setShowAnswerInput(false);
+    setIsFlipped(true);
+    setRevealed(true);
+  }
   const handleFlip = () => {
-    setIsFlipped(f => !f)
-    setShowHint(false)
+    setIsFlipped(f => !f);
+    setShowHint(false);
+    if (!isFlipped) {
+      setShowAnswerInput(false);
+      setRevealed(true);
+    }
   }
 
   // called once user confirms in modal
   const doResetAll = () => {
-    setShowConfirm(false)
+    setShowConfirm(false);
     fetchWithAuth(`${API}/usercards/reset/?deck=${selectedDeckId}`, {
       method: 'POST',
     })
       .then(r => {
-        if (!r.ok) throw new Error('Reset failed')
-        return r.json()
+        if (!r.ok) throw new Error('Reset failed');
+        return r.json();
       })
       .then(() => {
-        fetchQueue()
-        fetchDistribution()
+        fetchQueue();
+        fetchDistribution();
+        fetchTotalCards();
+        setCurrentIdx(0); // Go to first flashcard after reset
+        setIsFlipped(false);
+        setShowHint(false);
+        setUserInput('');
+        setShowAnswerInput(true);
+        setRevealed(false);
       })
-      .catch(console.error)
+      .catch(console.error);
   }
 
   // Add status update handler
@@ -172,6 +287,11 @@ export default function Learn({ selectedDeckId }) {
 
   return (
     <div className={`learn-page ${settings.theme === 'dark' ? 'dark' : ''}`} style={{ fontSize: settings.fontSize }}>
+      <div className="learn-header" style={{display:'flex',alignItems:'center',gap:24,marginBottom:16}}>
+        <StudyAlarm />
+        <h2 className="text-xl font-semibold mb-2" style={{margin:0}}>{deckName ? `Learning: ${deckName}` : 'No Deck Selected'}</h2>
+      </div>
+      <hr style={{marginBottom:16}}/>
       {/* confirm‐reset modal */}
       {showConfirm && (
         <div className="modal-overlay">
@@ -187,7 +307,17 @@ export default function Learn({ selectedDeckId }) {
 
       {/* top row: Back + Reset */}
       <div className="top-button-row">
-        <button onClick={() => navigate(-1)} className="back-btn">
+        <button onClick={() => {
+          (async () => {
+            await fetchWithAuth(`${API}/usercards/reset/?deck=${selectedDeckId}`, { method: 'POST' });
+            resetLearnState();
+            setTimeout(() => {
+              setDistribution({ none: 0, again: 0, hard: 0, good: 0, easy: 0 });
+              setTotalCards(0);
+            }, 0);
+            navigate(-1);
+          })();
+        }} className="back-btn">
           Back
         </button>
         <button onClick={() => setShowConfirm(true)} className="reset-btn">
@@ -195,7 +325,7 @@ export default function Learn({ selectedDeckId }) {
         </button>
       </div>
       {/* Progress bar */}
-      <ProgressBar current={safeIdx + 1} total={queue.length} />
+      <ProgressBar current={totalCards === 0 ? 0 : safeIdx + 1} total={totalCards} />
       {/* Status controls */}
       <div className="flex justify-center gap-2 mb-2">
         {['new','review','known'].map(s => (
@@ -234,7 +364,7 @@ export default function Learn({ selectedDeckId }) {
               {/* FRONT: show full-deck distribution */}
               <div className="flip-front">
                 <div className="rating-summary">
-                  <span className="none-text">None: {distribution.none}</span>
+                  {/* <span className="none-text">None: {distribution.none}</span> */}
                   <span className="again-text">Again: {distribution.again}</span>
                   <span className="hard-text">Hard: {distribution.hard}</span>
                   <span className="good-text">Good: {distribution.good}</span>
@@ -243,12 +373,9 @@ export default function Learn({ selectedDeckId }) {
 
                 <h3 className="learn-problem">{card.problem}</h3>
                 {/* Active recall input */}
-                {showAnswerInput && (
+                {showAnswerInput && !revealed && (
                   <form
-                    onSubmit={e => {
-                      e.preventDefault();
-                      setShowAnswerInput(false);
-                    }}
+                    onSubmit={handleReveal}
                     className="mb-4 flex flex-col items-center"
                   >
                     <input

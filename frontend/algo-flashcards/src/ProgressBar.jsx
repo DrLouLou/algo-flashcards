@@ -2,7 +2,9 @@
 import React from 'react';
 
 export default function ProgressBar({ current, total }) {
-  const percent = total > 0 ? (current / total) * 100 : 0;
+  // Clamp current to never exceed total, and never show 1 of 0
+  const safeCurrent = total === 0 ? 0 : Math.min(current, total);
+  const percent = total > 0 ? (safeCurrent / total) * 100 : 0;
   return (
     <div className="progress-bar-wrapper" style={{ width: '100%', margin: '1rem 0' }}>
       <div
@@ -27,7 +29,7 @@ export default function ProgressBar({ current, total }) {
         />
       </div>
       <div className="progress-bar-label" style={{ textAlign: 'center', marginTop: 4, fontSize: 14, color: '#444' }}>
-        Card {current} of {total}
+        Card {safeCurrent} of {total}
       </div>
     </div>
   );

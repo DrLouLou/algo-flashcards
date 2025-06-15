@@ -125,6 +125,33 @@ export default function App() {
     (selectedDifficulties.length === 0 ? cards : cards.filter(c => selectedDifficulties.includes(c.difficulty)))
       .filter(c => selectedTags.length === 0 || (c.tags && selectedTags.every(tag => c.tags.split(',').includes(tag))));
 
+  // Persist selectedDeckId in localStorage
+  useEffect(() => {
+    const storedDeckId = localStorage.getItem('selectedDeckId');
+    if (storedDeckId && !selectedDeckId) {
+      setDeckId(storedDeckId);
+    }
+  }, [selectedDeckId]);
+
+  // Whenever selectedDeckId changes, persist it
+  useEffect(() => {
+    if (selectedDeckId) {
+      localStorage.setItem('selectedDeckId', selectedDeckId);
+    } else {
+      localStorage.removeItem('selectedDeckId');
+    }
+  }, [selectedDeckId]);
+
+  // Wrap setDeckId to also update localStorage
+  const handleSetDeckId = id => {
+    setDeckId(id);
+    if (id) {
+      localStorage.setItem('selectedDeckId', id);
+    } else {
+      localStorage.removeItem('selectedDeckId');
+    }
+  };
+
   return (
     <SettingsProvider>
       <Router>
@@ -177,7 +204,7 @@ export default function App() {
                                 <DeckDropdown
                                   decks={decks}
                                   selectedDeckId={selectedDeckId}
-                                  onChange={setDeckId}
+                                  onChange={handleSetDeckId}
                                 />
                               </div>
 
@@ -299,7 +326,7 @@ export default function App() {
                   path="/learn"
                   element={
                     <Learn
-                      selectedDeckId={selectedDeckId} 
+                      selectedDeckId={selectedDeckId}
                     />
                   }
                 />

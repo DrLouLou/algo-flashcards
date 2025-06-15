@@ -1,115 +1,83 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function StudyAlarm() {
-  const [alarmTime, setAlarmTime] = useState("");
-
+  // Timer in seconds
+  const [duration, setDuration] = useState(25 * 60); // default 25 min
+  const [remaining, setRemaining] = useState(25 * 60);
   const [running, setRunning] = useState(false);
-
-  const [triggered, setTriggered] = useState(false);
-
   const intervalRef = useRef(null);
 
-  function timeStringToSeconds(str) {
-    if (!str) return null;
-    const [hh, mm] = str.split(":").map((v) => parseInt(v, 10));
-    if (isNaN(hh) || isNaN(mm)) return null;
-    return hh * 3600 + mm * 60;
+  // Format seconds as MM:SS
+  function formatTime(secs) {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
   }
 
-  function nowInSeconds() {
-    const now = new Date();
-    return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-  }
-
-  function handleStart() {
-    if (running || !alarmTime) return;
-
-    const targetSeconds = timeStringToSeconds(alarmTime);
-    if (targetSeconds === null) {
-      alert("Please enter a valid HH:MM time first.");
+  // Start/stop logic
+  function handleStartStop() {
+    if (running) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setRunning(false);
       return;
     }
-
-    setTriggered(false);
     setRunning(true);
-
-    intervalRef.current = window.setInterval(() => {
-      const current = nowInSeconds();
-      if (current >= targetSeconds && !triggered) {
-        setTriggered(true);
-        alert(`⏰ Alarm! It is now ${alarmTime}.`);
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-        setRunning(false);
-      }
+    intervalRef.current = setInterval(() => {
+      setRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          setRunning(false);
+          alert('⏰ Time is up!');
+          return duration;
+        }
+        return prev - 1;
+      });
     }, 1000);
   }
 
-  function handleStop() {
-    if (intervalRef.current !== null) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+  function handleReset() {
+    clearInterval(intervalRef.current);
+    intervalRef.current = null;
     setRunning(false);
+    setRemaining(duration);
   }
 
-  function handleReset() {
-    if (intervalRef.current !== null) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setAlarmTime("");
-    setRunning(false);
-    setTriggered(false);
-  }
+  // Update remaining if duration changes
+  useEffect(() => {
+    setRemaining(duration);
+  }, [duration]);
 
   useEffect(() => {
     return () => {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current);
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
 
   return (
-    <div style={{ display: "inline-block", textAlign: "left" }}>
-      <h2>Alarm Clock</h2>
-
-      <label htmlFor="alarm-input" style={{ display: "block", marginBottom: "0.5rem" }}>
-        Set Alarm Time (HH:MM):
-      </label>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '1rem' }}>
       <input
-        id="alarm-input"
-        type="time"
-        value={alarmTime}
-        onChange={(e) => {
-          setAlarmTime(e.target.value);
-          setTriggered(false);
+        type="number"
+        min={1}
+        max={120}
+        value={Math.floor(duration / 60)}
+        disabled={running}
+        onChange={e => {
+          const mins = Math.max(1, Math.min(120, Number(e.target.value)));
+          setDuration(mins * 60);
         }}
-        style={{ fontSize: "1rem", padding: "0.25rem", marginBottom: "1rem" }}
+        style={{ width: 48, textAlign: 'right', fontSize: '1rem', padding: 2, borderRadius: 4, border: '1px solid #ccc' }}
+        aria-label="Timer minutes"
       />
-
-      {alarmTime && !triggered && (
-        <p>
-          Alarm is set for <strong>{alarmTime}</strong>.{" "}
-          {running ? "Monitoring..." : "Not running."}
-        </p>
-      )}
-      {triggered && <p style={{ color: "crimson" }}>Alarm triggered at {alarmTime}!</p>}
-      {!alarmTime && <p style={{ color: "#555" }}>No alarm time chosen.</p>}
-
-      <div style={{ marginTop: "0.5rem" }}>
-        {running ? (
-          <button onClick={handleStop} style={{ marginRight: "0.5rem" }}>
-            Stop
-          </button>
-        ) : (
-          <button onClick={handleStart} style={{ marginRight: "0.5rem" }}>
-            Start
-          </button>
-        )}
-        <button onClick={handleReset}>Reset</button>
-      </div>
+      <span style={{ fontWeight: 500 }}>min</span>
+      <span style={{ fontFamily: 'monospace', fontSize: '1.1em', margin: '0 8px' }}>{formatTime(remaining)}</span>
+      <button onClick={handleStartStop} style={{ padding: '2px 10px', borderRadius: 4, background: running ? '#f87171' : '#4ade80', color: '#fff', border: 'none', fontWeight: 500 }}>
+        {running ? 'Stop' : 'Start'}
+      </button>
+      <button onClick={handleReset} style={{ padding: '2px 10px', borderRadius: 4, background: '#e5e7eb', color: '#222', border: 'none', fontWeight: 500 }}>
+        Reset
+      </button>
     </div>
   );
 }

@@ -7,31 +7,29 @@ from .models import Deck, Card, UserCard
 
 User = settings.AUTH_USER_MODEL
 
+
 @receiver(post_save, sender=User)
 def bootstrap_user(sender, instance, created, **kwargs):
     if not created:
         return
 
     # 1) Create an empty personal deck for the new user
-    Deck.objects.create(
-        name=f"{instance.username}'s Deck",
-        owner=instance
-    )
+    Deck.objects.create(name=f"{instance.username}'s Deck", owner=instance)
 
     # 2) Find (or create) the global Starter Deck
     starter_deck, _ = Deck.objects.get_or_create(
         name="Starter Deck",
-        defaults={'description': 'All pre-loaded Anki cards', 'owner': None}
+        defaults={"description": "All pre-loaded Anki cards", "owner": None},
     )
 
     # 3) Seed the new user's review queue:
-    #    one UserCard per card in the Starter Deck
+    #    one UserCard per card in the Starter Deck (idempotent)
     now = timezone.now()
-    usercards = [
-        UserCard(user=instance, card=card, due_date=now)
-        for card in Card.objects.filter(deck=starter_deck)
-    ]
-    UserCard.objects.bulk_create(usercards)
+    for card in Card.objects.filter(deck=starter_deck):
+        UserCard.objects.get_or_create(
+            user=instance, card=card, defaults={"due_date": now}
+        )
+
 
 # @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 # def create_default_deck(sender, instance, created, **kwargs):
