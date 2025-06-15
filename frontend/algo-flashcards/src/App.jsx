@@ -19,7 +19,7 @@ import About         from './About';
 import Info          from './Info';
 import Generate      from './Generate';
 import CreateDeck    from './CreateDeck';
-// import StudyAlarm    from './StudyAlarm';
+import StudyAlarm    from './StudyAlarm';
 import MainIcon      from '../public/icon.png';
 import Profile           from './Profile';
 import { SettingsProvider } from './SettingsContext';
@@ -305,6 +305,7 @@ export default function App() {
                 />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/settings" element={<SettingsPanel />} />
+                <Route path="/alarm" element={<StudyAlarm />} />
               </>
             ) : (
               <Route path="*" element={<Navigate to="/login" replace />} />
