@@ -25,6 +25,7 @@ import Profile           from './Profile';
 import { SettingsProvider } from './SettingsContext';
 import SettingsPanel from './SettingsPanel';
 import TagEditor      from './TagEditor';
+import ManageDecks from './ManageDecks'
 import './styles/App.css';
 
 export default function App() {
@@ -218,6 +219,18 @@ export default function App() {
                                   + New Deck
                                 </button>
                               </Link>
+
+                              {/* manage decks */}
+                              <Link to="/decks/manage" className="w-full block">
+                                <button className="
+                                  w-full rounded-md px-4 py-2 text-sm font-medium shadow
+                                  transition
+                                  text-gray-700 bg-white border border-gray-300
+                                  hover:bg-gray-50
+                                ">
+                                  Manage Decks
+                                </button>
+                              </Link>
                             </div>
 
                             {/* difficulty filter */}
@@ -295,6 +308,7 @@ export default function App() {
                 <Route path="/cards/:id"  element={<CardDetail />} />
                 <Route path="/cards/new"  element={<CreateCard decks={decks} reloadCards={reloadCards}/>} />
                 <Route path="/decks/new"  element={<CreateDeck reloadDecks={reloadDecks} />} />
+                <Route path="/decks/manage"  element={<ManageDecks decks={decks} reloadDecks={reloadDecks} />} />
                 <Route
                   path="/learn"
                   element={

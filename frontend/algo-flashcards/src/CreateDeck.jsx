@@ -32,7 +32,8 @@ export default function CreateDeck({reloadDecks}) {
       const newDeck = await res.json()
       // go pick that deck in your dropdown
       reloadDecks();
-      nav('/', { state: { selectDeck: newDeck.id } })
+      // nav('/', { state: { selectDeck: newDeck.id } })
+      nav(-1);
     } catch (err) {
       setError(err.message)
     }
