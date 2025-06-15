@@ -154,13 +154,26 @@ class UserCardViewSet(viewsets.ModelViewSet):
         qs = self.get_queryset()
         if deck_id:
             qs = qs.filter(card__deck_id=deck_id)
-        # reset scheduling + rating
+            # --- PATCH: ensure all UserCards exist for this user/deck ---
+            from .models import Card, UserCard
+            from django.utils import timezone
+
+            cards = Card.objects.filter(deck_id=deck_id)
+            now = timezone.now()
+            for card in cards:
+                UserCard.objects.get_or_create(
+                    user=request.user, card=card, defaults={"due_date": now}
+                )
+            # refresh qs after possible creation
+            qs = self.get_queryset().filter(card__deck_id=deck_id)
+        # reset scheduling + rating + status for this user's cards in this deck only
         qs.update(
-            last_rating=None,
+            last_rating="",  # must be empty string, not None
             interval=0,
             ease_factor=2.5,
             repetitions=0,
             due_date=timezone.now(),
+            status="new",  # ensure cards are learnable again
         )
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)

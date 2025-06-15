@@ -50,6 +50,13 @@ docker compose exec backend python manage.py migrate
 docker compose exec backend python manage.py import_anki anki_cards.txt
 ```
 
+### 5b. Backfill Starter Deck for Learn Mode
+To ensure all users have UserCards for every card in the Starter Deck (so Learn mode works for everyone), run:
+```zsh
+docker compose exec backend python manage.py backfill_starter_usercards
+```
+This will create any missing UserCards for all users and all cards in the Starter Deck.
+
 ### 6. Create Django Superuser (Admin)
 ```zsh
 docker compose exec backend python manage.py createsuperuser

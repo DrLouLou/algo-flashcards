@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 
 export default function TagEditor({ tags = [], onChange, allTags = [], addButtonLabel }) {
   const [input, setInput] = useState('');
-  const addTag = (e) => {
-    if (e) e.preventDefault();
+  const addTag = () => {
     const tag = input.trim();
     if (tag && !tags.includes(tag)) {
       onChange([...tags, tag]);
@@ -31,7 +30,8 @@ export default function TagEditor({ tags = [], onChange, allTags = [], addButton
           </button>
         </span>
       ))}
-      <form onSubmit={addTag} className="flex items-center gap-2">
+      {/* Replace <form> with <div> to prevent accidental form submission */}
+      <div className="flex items-center gap-2">
         <input
           type="text"
           value={input}
@@ -39,15 +39,25 @@ export default function TagEditor({ tags = [], onChange, allTags = [], addButton
           placeholder={addButtonLabel ? addButtonLabel + "..." : "Add tag..."}
           className="border rounded px-2 py-1 text-sm"
           style={{ minWidth: 80 }}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              if (input.trim()) {
+                e.preventDefault();
+                addTag();
+              }
+              // else: allow form submit
+            }
+          }}
         />
         <button
-          type="submit"
+          type="button"
           className="px-2 py-1 bg-indigo-500 text-white rounded text-xs"
           disabled={!input.trim()}
+          onClick={addTag}
         >
           {addButtonLabel || "Add"}
         </button>
-      </form>
+      </div>
       {suggestions.length > 0 && (
         <div className="tag-suggestions flex flex-wrap gap-1 ml-2">
           {suggestions.map(s => (

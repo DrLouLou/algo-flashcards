@@ -25,11 +25,6 @@ export default function CreateCard({ decks, reloadCards }) {
     setForm(f => ({ ...f, [name]: value }));
   };
 
-  // Tag change handler
-  const handleTagsChange = tagsArr => {
-    setForm(f => ({ ...f, tags: tagsArr.join(',') }));
-  };
-
   const handleSubmit = async e => {
     e.preventDefault();
     try {
@@ -138,10 +133,12 @@ export default function CreateCard({ decks, reloadCards }) {
         {/* TAGS */}
         <div className="flex flex-col col-span-full">
           <label className="mb-1 text-sm font-medium text-gray-700">Tags</label>
-          {/* <TagEditor
+          <TagEditor
             tags={form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
-            onChange={handleTagsChange}
-          /> */}
+            onChange={tagsArr => setForm(f => ({ ...f, tags: tagsArr.join(',') }))}
+            allTags={Array.from(new Set((decks || []).flatMap(deck => (deck.tags || []).concat((deck.cards || []).flatMap(card => (card.tags || '').split(',').map(t => t.trim()).filter(Boolean))))))}
+            addButtonLabel="Add Tag"
+          />
         </div>
 
         {/* buttons */}
