@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 export default function NavBar({ onLogout }) {
   const navigate  = useNavigate();
-  const { pathname } = useLocation();     // 👉 to highlight the active link
+  const { pathname } = useLocation();
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
@@ -13,9 +13,8 @@ export default function NavBar({ onLogout }) {
   const menu = [
     { to: '/',         label: 'Home'      },
     { to: '/generate', label: 'Generate'  },
-    { to: '/info',     label: 'Info'      },
     { to: '/about',    label: 'About'     },
-    { to: '/alarm',    label: 'Alarm'     }, // add alarm clock to menu
+    // { to: '/alarm',    label: 'Alarm'     },
     { to: '/profile',  label: 'Profile'   },
   ];
 

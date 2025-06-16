@@ -1,6 +1,3 @@
-/* src/styles/Learn.css */
-
-/* Page container: center content vertically and horizontally */
 .learn-page {
     position: relative;
     display: flex;
@@ -8,11 +5,10 @@
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    min-height: calc(100vh - 64px); /* adjust if navbar height differs */
+    min-height: calc(100vh - 64px);
     box-sizing: border-box;
   }
   
-  /* Back button positioned top-left */
   .back-btn {
     position: absolute;
     top: 1rem;
@@ -26,7 +22,6 @@
     font-size: 1rem;
   }
   
-  /* Container for Prev, Card, Next */
   .learn-card-row {
     display: flex;
     align-items: center;
@@ -37,7 +32,6 @@
     margin-top: 2rem;
   }
   
-  /* Prev and Next buttons */
   .prev-btn,
   .next-btn {
     padding: 0.75rem 1.25rem;
@@ -58,14 +52,12 @@
     cursor: not-allowed;
   }
   
-  /* Card container with fixed size and perspective */
   .learn-card-container {
     perspective: 1000px;
     width: 600px;
     height: 700px;
   }
   
-  /* Card face wrapper */
   .learn-card {
     width: 100%;
     height: 100%;
@@ -82,7 +74,6 @@
     transform: rotateY(180deg);
   }
   
-  /* Front and back faces */
   .flip-front,
   .flip-back {
     position: absolute;
@@ -102,19 +93,16 @@
     transform: rotateY(180deg);
   }
   
-  /* Problem heading */
   .learn-problem {
     font-size: 1.5rem;
     margin: 1rem 0;
     color: #102a43;
   }
   
-  /* Difficulty text colors */
   .diff-text.easy { color: #28a745; }
   .diff-text.medium { color: #ffc107; }
   .diff-text.hard { color: #dc3545; }
   
-  /* Flip button centered below card */
   .flip-btn {
     margin-top: 1.5rem;
     padding: 0.75rem 1.5rem;
@@ -145,11 +133,11 @@
     color: #fff;
   }
   
-  .again-btn { background: #dc3545; }  /* red */
-  .hard-btn  { background: #fd7e14; }  /* orange */
-  .good-btn  { background: #ffc107; }  /* yellow */
-  .easy-btn  { background: #28a745; }  /* green */
-  .flip-btn  { background: #007bff; }  /* blue */
+  .again-btn { background: #dc3545; }
+  .hard-btn  { background: #fd7e14; }
+  .good-btn  { background: #ffc107; } 
+  .easy-btn  { background: #28a745; } 
+  .flip-btn  { background: #007bff; } 
 
   .modal-overlay {
     position: fixed;
@@ -181,7 +169,6 @@
     text-align: center;
   }
   
-  /* toggle button */
   .chart-toggle {
     background: #007bff;
     color: #fff;
@@ -195,7 +182,6 @@
     background: #0069d9;
   }
   
-  /* chart container (adds padding) */
   .chart-container {
     margin-top: 0.75rem;
     width: 600px;

@@ -1,5 +1,8 @@
 export default function About() {
     return (
-        <div>created by Louis Choo-Choy & Darli Seranaj</div>
+        <>
+            <div>Learning is based on spaced-repetition</div>
+            <div>App created by Louis Choo-Choy & Darli Seranaj</div>
+        </>
     )
 }

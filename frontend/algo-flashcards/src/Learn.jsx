@@ -6,7 +6,7 @@ import fetchWithAuth from './api'
 import ChartDropdown from './ChartDropdown.jsx'
 import { useSettings } from './SettingsContext';
 import ProgressBar from './ProgressBar.jsx';
-import StudyAlarm from './StudyAlarm';
+// import StudyAlarm from './StudyAlarm';
 
 import './styles/Learn.css'
 
@@ -170,7 +170,6 @@ export default function Learn({ selectedDeckId }) {
     return (
       <div className="learn-page">
         <div className="learn-header" style={{display:'flex',alignItems:'center',gap:24,marginBottom:16}}>
-          <StudyAlarm />
           <h2 className="text-xl font-semibold mb-2" style={{margin:0}}>{deckName ? `Learning: ${deckName}` : 'No Deck Selected'}</h2>
         </div>
         <hr style={{marginBottom:16}}/>
@@ -183,7 +182,6 @@ export default function Learn({ selectedDeckId }) {
     return (
       <div className="learn-page">
         <div className="learn-header" style={{display:'flex',alignItems:'center',gap:24,marginBottom:16}}>
-          <StudyAlarm />
           <h2 className="text-xl font-semibold mb-2" style={{margin:0}}>{deckName ? `Learning: ${deckName}` : 'No Deck Selected'}</h2>
         </div>
         <hr style={{marginBottom:16}}/>
@@ -233,12 +231,6 @@ export default function Learn({ selectedDeckId }) {
     setShowHint(false);
   }
 
-  const handleReveal = (e) => {
-    e.preventDefault();
-    setShowAnswerInput(false);
-    setIsFlipped(true);
-    setRevealed(true);
-  }
   const handleFlip = () => {
     setIsFlipped(f => !f);
     setShowHint(false);
@@ -288,7 +280,6 @@ export default function Learn({ selectedDeckId }) {
   return (
     <div className={`learn-page ${settings.theme === 'dark' ? 'dark' : ''}`} style={{ fontSize: settings.fontSize }}>
       <div className="learn-header" style={{display:'flex',alignItems:'center',gap:24,marginBottom:16}}>
-        <StudyAlarm />
         <h2 className="text-xl font-semibold mb-2" style={{margin:0}}>{deckName ? `Learning: ${deckName}` : 'No Deck Selected'}</h2>
       </div>
       <hr style={{marginBottom:16}}/>
@@ -324,8 +315,10 @@ export default function Learn({ selectedDeckId }) {
           Reset Progress
         </button>
       </div>
+
       {/* Progress bar */}
       <ProgressBar current={totalCards === 0 ? 0 : safeIdx + 1} total={totalCards} />
+
       {/* Status controls */}
       <div className="flex justify-center gap-2 mb-2">
         {['new','review','known'].map(s => (
@@ -339,11 +332,14 @@ export default function Learn({ selectedDeckId }) {
           </button>
         ))}
       </div>
+
       {/* Navigation */}
       <div className="flex justify-between w-full max-w-2xl mx-auto mb-4">
         <button onClick={goPrev} disabled={safeIdx === 0} className="prev-btn">Prev</button>
         <button onClick={goNext} disabled={safeIdx === queue.length - 1} className="next-btn">Next</button>
       </div>
+
+      {/* Chart */}
       <ChartDropdown distribution={distribution} />
 
       {/* the card itself */}
@@ -354,9 +350,9 @@ export default function Learn({ selectedDeckId }) {
             style={{
               transition: settings.animation ? 'transform 0.6s' : 'none',
               fontSize: settings.fontSize,
-              background: settings.theme === 'dark' ? '#23272f' : '#fff',
-              color: settings.theme === 'dark' ? '#f3f3f3' : '#222',
-              boxShadow: settings.theme === 'dark' ? '0 4px 16px #1118' : '0 4px 16px rgba(0,0,0,0.1)',
+              // background: settings.theme === 'dark' ? '#23272f' : '#fff',
+              // color: settings.theme === 'dark' ? '#f3f3f3' : '#222',
+              // boxShadow: settings.theme === 'dark' ? '0 4px 16px #1118' : '0 4px 16px rgba(0,0,0,0.1)',
             }}
           >
             <div className="flip-inner">
@@ -372,23 +368,6 @@ export default function Learn({ selectedDeckId }) {
                 </div>
 
                 <h3 className="learn-problem">{card.problem}</h3>
-                {/* Active recall input */}
-                {showAnswerInput && !revealed && (
-                  <form
-                    onSubmit={handleReveal}
-                    className="mb-4 flex flex-col items-center"
-                  >
-                    <input
-                      type="text"
-                      value={userInput}
-                      onChange={e => setUserInput(e.target.value)}
-                      placeholder="Type your answer..."
-                      className="rounded border px-3 py-2 text-lg w-full max-w-md mb-2"
-                      autoFocus
-                    />
-                    <button type="submit" className="flip-btn">Reveal</button>
-                  </form>
-                )}
 
                 <p>
                   <strong>Difficulty:</strong>{' '}
@@ -411,7 +390,7 @@ export default function Learn({ selectedDeckId }) {
                 <h3>Pseudocode</h3>
                 <Editor
                   height="200px"
-                  defaultLanguage="javascript"
+                  defaultLanguage="python"
                   value={card.pseudo}
                   options={{ readOnly: true, minimap: { enabled: false }, wordWrap: 'on' }}
                 />

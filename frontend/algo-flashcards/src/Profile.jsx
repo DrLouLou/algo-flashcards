@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import fetchWithAuth from './api'
+import SettingsPanel from './SettingsPanel'
 
 export default function Profile() {
   const [user, setUser] = useState(null)
@@ -50,6 +51,7 @@ export default function Profile() {
           </li>
         ))}
       </ul>
+      <SettingsPanel />
     </div>
   )
 }

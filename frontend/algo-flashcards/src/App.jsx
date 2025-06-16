@@ -16,7 +16,6 @@ import DeckDropdown  from './DeckDropdown';
 import Learn         from './Learn';
 import CreateCard    from './CreateCard';
 import About         from './About';
-import Info          from './Info';
 import Generate      from './Generate';
 import CreateDeck    from './CreateDeck';
 import StudyAlarm    from './StudyAlarm';
@@ -331,7 +330,6 @@ export default function App() {
                 {/* misc routes */}
                 <Route path="/about"      element={<About />} />
                 <Route path="/generate"   element={<Generate />} />
-                <Route path="/info"       element={<Info />} />
                 <Route path="/cards/:id"  element={<CardDetail />} />
                 <Route path="/cards/new"  element={<CreateCard decks={decks} reloadCards={reloadCards}/>} />
                 <Route path="/decks/new"  element={<CreateDeck reloadDecks={reloadDecks} />} />
@@ -345,7 +343,6 @@ export default function App() {
                   }
                 />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/settings" element={<SettingsPanel />} />
                 <Route path="/alarm" element={<StudyAlarm />} />
               </>
             ) : (
