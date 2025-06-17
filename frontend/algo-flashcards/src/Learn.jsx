@@ -350,9 +350,9 @@ export default function Learn({ selectedDeckId }) {
             style={{
               transition: settings.animation ? 'transform 0.6s' : 'none',
               fontSize: settings.fontSize,
-              // background: settings.theme === 'dark' ? '#23272f' : '#fff',
-              // color: settings.theme === 'dark' ? '#f3f3f3' : '#222',
-              // boxShadow: settings.theme === 'dark' ? '0 4px 16px #1118' : '0 4px 16px rgba(0,0,0,0.1)',
+              background: settings.theme === 'dark' ? '#23272f' : '#fff',
+              color: settings.theme === 'dark' ? '#f3f3f3' : '#222',
+              boxShadow: settings.theme === 'dark' ? '0 4px 16px #1118' : '0 4px 16px rgba(0,0,0,0.1)',
             }}
           >
             <div className="flip-inner">
