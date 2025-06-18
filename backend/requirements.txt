@@ -23,6 +23,7 @@ pydantic==2.11.5
 pydantic_core==2.33.2
 PyJWT==2.9.0
 python-dotenv==1.1.0
+psycopg2-binary
 requests==2.32.4
 sniffio==1.3.1
 soupsieve==2.7

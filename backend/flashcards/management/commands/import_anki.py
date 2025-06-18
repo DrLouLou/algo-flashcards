@@ -1,33 +1,59 @@
 import csv
 from django.core.management.base import BaseCommand
-from flashcards.models import Deck, Card
+from flashcards.models import Deck, Card, CardType
 from bs4 import BeautifulSoup
+
 
 class Command(BaseCommand):
     help = "Import cards from an Anki-exported TSV file into the Starter Deck"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'tsv_path', help="Path to the Anki-exported .txt file (TSV)"
+            "tsv_path", help="Path to the Anki-exported .txt file (TSV)"
         )
 
     def handle(self, *args, **options):
-        path = options['tsv_path']
+        path = options["tsv_path"]
 
-        # 1) Get or create the Starter Deck
+        # Get or create a default CardType
+        default_cardtype, _ = CardType.objects.get_or_create(
+            name="Default",
+            defaults={
+                "owner_id": 1,  # You may want to ensure a user with id=1 exists, or adjust as needed
+                "fields": [
+                    "problem",
+                    "difficulty",
+                    "category",
+                    "hint",
+                    "pseudo",
+                    "solution",
+                    "complexity",
+                    "tags",
+                ],
+            },
+        )
+
+        # 1) Get or create the Starter Deck, always providing card_type
         starter_deck, _ = Deck.objects.get_or_create(
             name="Starter Deck",
-            defaults={'description': 'All pre-loaded Anki cards'}
+            defaults={
+                "description": "All pre-loaded Anki cards",
+                "card_type": default_cardtype,
+            },
         )
+        # If deck exists but card_type is not set, set it
+        if not starter_deck.card_type:
+            starter_deck.card_type = default_cardtype
+            starter_deck.save(update_fields=["card_type"])
 
         cards_to_create = []
 
         # 2) Open file with newline='' to preserve embedded newlines
-        with open(path, encoding='utf-8', newline='') as f:
-            reader = csv.reader(f, delimiter='\t', quotechar='"')
+        with open(path, encoding="utf-8", newline="") as f:
+            reader = csv.reader(f, delimiter="\t", quotechar='"')
             for lineno, row in enumerate(reader, start=1):
                 # Skip metadata or empty lines
-                if not row or row[0].startswith('#'):
+                if not row or row[0].startswith("#"):
                     continue
 
                 # Ensure at least 7 columns
@@ -37,16 +63,28 @@ class Command(BaseCommand):
                     )
                     continue
 
-                problem, difficulty, category, hint, pseudo_html, solution_html, complexity = row[:7]
+                (
+                    problem,
+                    difficulty,
+                    category,
+                    hint,
+                    pseudo_html,
+                    solution_html,
+                    complexity,
+                ) = row[:7]
 
                 # 3) Convert HTML fields to plaintext with real newlines
-                pseudo_text = BeautifulSoup(pseudo_html, 'html.parser')\
-                    .get_text(separator='\n')\
+                pseudo_text = (
+                    BeautifulSoup(pseudo_html, "html.parser")
+                    .get_text(separator="\n")
                     .strip()
+                )
 
-                solution_text = BeautifulSoup(solution_html, 'html.parser')\
-                    .get_text(separator='\n')\
+                solution_text = (
+                    BeautifulSoup(solution_html, "html.parser")
+                    .get_text(separator="\n")
                     .strip()
+                )
 
                 cards_to_create.append(
                     Card(
@@ -58,6 +96,16 @@ class Command(BaseCommand):
                         pseudo=pseudo_text,
                         solution=solution_text,
                         complexity=complexity.strip(),
+                        data={
+                            "problem": problem.strip(),
+                            "difficulty": difficulty.strip(),
+                            "category": category.strip(),
+                            "hint": hint.strip(),
+                            "pseudo": pseudo_text,
+                            "solution": solution_text,
+                            "complexity": complexity.strip(),
+                            "tags": "",
+                        },
                     )
                 )
 
@@ -65,7 +113,9 @@ class Command(BaseCommand):
         deleted, _ = Card.objects.filter(deck=starter_deck).delete()
         if deleted:
             self.stdout.write(
-                self.style.WARNING(f"Deleted {deleted} existing cards from '{starter_deck.name}'")
+                self.style.WARNING(
+                    f"Deleted {deleted} existing cards from '{starter_deck.name}'"
+                )
             )
 
         # 5) Bulk-create new cards

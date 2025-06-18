@@ -3,7 +3,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from .models import Deck, Card, UserCard
+from .models import Deck, Card, UserCard, CardType
 
 User = settings.AUTH_USER_MODEL
 
@@ -13,16 +13,28 @@ def bootstrap_user(sender, instance, created, **kwargs):
     if not created:
         return
 
-    # 1) Create an empty personal deck for the new user
-    Deck.objects.create(name=f"{instance.username}'s Deck", owner=instance)
-
-    # 2) Find (or create) the global Starter Deck
-    starter_deck, _ = Deck.objects.get_or_create(
-        name="Starter Deck",
-        defaults={"description": "All pre-loaded Anki cards", "owner": None},
+    # 1) Create or get a default CardType for the user
+    card_type, _ = CardType.objects.get_or_create(
+        owner=instance,
+        name="Default",
+        defaults={"description": "Default card type", "fields": []},
+    )
+    # 2) Create an empty personal deck for the new user with a valid card_type
+    Deck.objects.create(
+        name=f"{instance.username}'s Deck", owner=instance, card_type=card_type
     )
 
-    # 3) Seed the new user's review queue:
+    # 3) Find (or create) the global Starter Deck
+    starter_deck, _ = Deck.objects.get_or_create(
+        name="Starter Deck",
+        defaults={
+            "description": "All pre-loaded Anki cards",
+            "owner": None,
+            "card_type": card_type,
+        },
+    )
+
+    # 4) Seed the new user's review queue:
     #    one UserCard per card in the Starter Deck (idempotent)
     now = timezone.now()
     for card in Card.objects.filter(deck=starter_deck):
