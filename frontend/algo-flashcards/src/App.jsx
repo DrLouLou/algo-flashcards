@@ -7,6 +7,7 @@ import {
   Link,
 } from 'react-router-dom';
 import fetchWithAuth from './api';
+import { HiOutlineTrash, HiOutlinePencil, HiPlus } from 'react-icons/hi';
 
 import NavBar        from './NavBar';
 import Auth          from './Auth';
@@ -29,12 +30,13 @@ import './styles/App.css';
 
 export default function App() {
   /* ---------- state ---------- */
-  const [token, setToken]                     = useState(localStorage.getItem('accessToken'));
-  const [decks, setDecks]                     = useState([]);
-  const [selectedDeckId, setDeckId]           = useState(null);
-  const [cards, setCards]                     = useState([]);
-  const [nextURL, setNextURL]                 = useState(null);
-  const [prevURL, setPrevURL]                 = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('accessToken'));
+  const [decks, setDecks] = useState([]);
+  // const [selectedDeckId, setDeckId]= useState(null);
+  const [cards, setCards] = useState([]);
+  const [nextURL, setNextURL] = useState(null);
+  const [prevURL, setPrevURL] = useState(null);
+  const [busyId, setBusyId] = useState(null);
   const [selectedDifficulties, setSelectedDifficulties] = useState([]);
   const [selectedTags, setSelectedTags]       = useState([]);
 
@@ -64,6 +66,23 @@ export default function App() {
       .catch(console.error);
   };
 
+  const handleDelete = async id => {
+    if (!window.confirm('Delete this deck and all its cards?')) return;
+    setBusyId(id);
+    try {
+      await fetchWithAuth(
+        `${import.meta.env.VITE_API_BASE_URL}/decks/${id}/`,
+        { method: 'DELETE' },
+      );
+      reloadDecks();        // refresh list in parent
+    } catch (err) {
+      console.error(err);
+      alert('Delete failed.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   /* ---------- load decks ---------- */
   const reloadDecks = useCallback(() => {
     if (!token) return;
@@ -79,7 +98,7 @@ export default function App() {
   const reloadCards = useCallback(() => {
     if (!token) return;
     const query = buildBaseQuery(
-      selectedDeckId,
+      // selectedDeckId,
       selectedDifficulties,
       selectedTags,
       null
@@ -92,7 +111,8 @@ export default function App() {
         setPrevURL(d.previous);
       })
       .catch(console.error);
-  }, [token, selectedDeckId, selectedDifficulties, selectedTags]);
+  // }, [token, selectedDeckId, selectedDifficulties, selectedTags]);
+  }, [token, selectedDifficulties, selectedTags]);
 
   useEffect(reloadCards, [reloadCards]);
 
@@ -103,7 +123,7 @@ export default function App() {
     const p = new URLSearchParams();
     if (deckId) p.append('deck', deckId);
     diffs.forEach(d => p.append('difficulty', d));
-    tags.forEach(t => p.append('tag', t));
+    // tags.forEach(t => p.append('tag', t));
     if (status) p.append('status', status);
     return p.toString();
   }
@@ -126,31 +146,31 @@ export default function App() {
     (selectedDifficulties.length === 0 ? cards : cards.filter(c => selectedDifficulties.includes(c.data?.difficulty))).filter(c => selectedTags.length === 0 || ((c.data?.tags || '').split(',').includes) && selectedTags.every(tag => (c.data?.tags || '').split(',').includes(tag)));
 
   // Persist selectedDeckId in localStorage
-  useEffect(() => {
-    const storedDeckId = localStorage.getItem('selectedDeckId');
-    if (storedDeckId && !selectedDeckId) {
-      setDeckId(storedDeckId);
-    }
-  }, [selectedDeckId]);
+  // useEffect(() => {
+  //   const storedDeckId = localStorage.getItem('selectedDeckId');
+  //   if (storedDeckId && !selectedDeckId) {
+  //     setDeckId(storedDeckId);
+  //   }
+  // }, [selectedDeckId]);
 
   // Whenever selectedDeckId changes, persist it
-  useEffect(() => {
-    if (selectedDeckId) {
-      localStorage.setItem('selectedDeckId', selectedDeckId);
-    } else {
-      localStorage.removeItem('selectedDeckId');
-    }
-  }, [selectedDeckId]);
+  // useEffect(() => {
+  //   if (selectedDeckId) {
+  //     localStorage.setItem('selectedDeckId', selectedDeckId);
+  //   } else {
+  //     localStorage.removeItem('selectedDeckId');
+  //   }
+  // }, [selectedDeckId]);
 
   // Wrap setDeckId to also update localStorage
-  const handleSetDeckId = id => {
-    setDeckId(id);
-    if (id) {
-      localStorage.setItem('selectedDeckId', id);
-    } else {
-      localStorage.removeItem('selectedDeckId');
-    }
-  };
+  // const handleSetDeckId = id => {
+  //   setDeckId(id);
+  //   if (id) {
+  //     localStorage.setItem('selectedDeckId', id);
+  //   } else {
+  //     localStorage.removeItem('selectedDeckId');
+  //   }
+  // };
 
   return (
     <SettingsProvider>
@@ -197,21 +217,21 @@ export default function App() {
                       <div className="px-4">
                         <div className="mx-auto max-w-7xl grid grid-cols-12 gap-6">
                           {/* sidebar */}
-                          <aside className="col-span-12 sm:col-span-4 lg:col-span-3 space-y-5">
-                            <div className="space-y-3">
+                          {/* <aside className="col-span-12 sm:col-span-4 lg:col-span-3 space-y-5">
+                            <div className="space-y-3"> */}
                               {/* deck selector */}
-                              <div className="relative">
+                              {/* <div className="relative">
                                 <DeckDropdown
                                   decks={decks}
                                   selectedDeckId={selectedDeckId}
                                   onChange={handleSetDeckId}
                                 />
-                              </div>
+                              </div> */}
 
                               {/* learn */}
-                              <Link to="/learn" className="w-full block">
+                              {/* <Link to="/learn" className="w-full block">
                                 <button
-                                  disabled={!selectedDeckId}
+                                  // disabled={!selectedDeckId}
                                   className="
                                     w-full rounded-md px-4 py-2 text-sm font-medium shadow transition
                                     text-gray-700 bg-white border border-gray-300 hover:bg-gray-50
@@ -220,10 +240,10 @@ export default function App() {
                                 >
                                   Learn
                                 </button>
-                              </Link>
+                              </Link> */}
 
                               {/* new card */}
-                              <Link to="/cards/new" className="w-full block">
+                              {/* <Link to="/cards/new" className="w-full block">
                                 <button className="
                                   w-full rounded-md px-4 py-2 text-sm font-medium shadow
                                   text-gray-700 bg-white border border-gray-300
@@ -232,10 +252,10 @@ export default function App() {
                                 ">
                                   + New Card
                                 </button>
-                              </Link>
+                              </Link> */}
 
                               {/* new deck */}
-                              <Link to="/decks/new" className="w-full block">
+                              {/* <Link to="/decks/new" className="w-full block">
                                 <button className="
                                   w-full rounded-md px-4 py-2 text-sm font-medium shadow
                                   transition
@@ -244,10 +264,10 @@ export default function App() {
                                 ">
                                   + New Deck
                                 </button>
-                              </Link>
+                              </Link> */}
 
                               {/* manage decks */}
-                              <Link to="/decks/manage" className="w-full block">
+                              {/* <Link to="/decks/manage" className="w-full block">
                                 <button className="
                                   w-full rounded-md px-4 py-2 text-sm font-medium shadow
                                   transition
@@ -257,10 +277,10 @@ export default function App() {
                                   Manage Decks
                                 </button>
                               </Link>
-                            </div>
+                            </div> */}
 
                             {/* difficulty filter */}
-                            <div className="flex flex-wrap gap-2">
+                            {/* <div className="flex flex-wrap gap-2">
                               {DIFFICULTIES.map(diff => {
                                 const active = selectedDifficulties.length === 0 || selectedDifficulties.includes(diff);
                                 const COLOR = {
@@ -286,10 +306,10 @@ export default function App() {
                                   </button>
                                 );
                               })}
-                            </div>
+                            </div> */}
 
                             {/* Tag filter UI */}
-                            <div className="mb-4">
+                            {/* <div className="mb-4">
                               <div className="font-medium mb-1">Filter by Tag</div>
                               <TagEditor 
                                 tags={selectedTags} 
@@ -298,10 +318,80 @@ export default function App() {
                                 addButtonLabel="Search Tag"
                               />
                             </div>
-                          </aside>
+                          </aside> */}
+
+                          {/* manage  decks */}
+                          <main className="col-span-12 sm:col-span-12 lg:col-span-12 px-4 py-8">
+                            {/* header */}
+                            <div className="mb-8 flex items-center justify-between">
+                              <h2 className="text-3xl font-semibold tracking-tight">Your Decks</h2>
+                              <button
+                                onClick={() => navigate('/decks/new')}
+                                className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2
+                                            text-sm font-medium text-white transition hover:bg-indigo-700"
+                              >
+                                <HiPlus className="h-5 w-5" />
+                                New
+                              </button>
+                            </div>
+                      
+                            {/* deck grid */}
+                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                              {decks.map(d => (
+                                <div
+                                  key={d.id}
+                                  className="group relative rounded-lg border border-gray-200 bg-white p-5 shadow-sm
+                                              transition hover:shadow-lg"
+                                >
+                                  <h3 className="mb-1 truncate text-lg font-semibold">{d.name}</h3>
+                                  <p className="mb-4 line-clamp-3 text-sm text-gray-600">
+                                    {d.description || 'No description'}
+                                  </p>
+                      
+                                  {/* action bar (appears on hover) */}
+                                  <div className="absolute inset-x-0 bottom-0 flex justify-between
+                                                  border-t border-gray-200 bg-gray-50 px-4 py-2
+                                                  opacity-0 transition group-hover:opacity-100">
+                                    <button
+                                      onClick={() => navigate(`/decks/${d.id}/edit`)}
+                                      className="inline-flex items-center gap-1 text-sm text-gray-600
+                                                  hover:text-indigo-600"
+                                    >
+                                      <HiOutlinePencil className="h-4 w-4" />
+                                      Edit
+                                    </button>
+                      
+                                    <button
+                                      disabled={busyId === d.id}
+                                      onClick={() => handleDelete(d.id)}
+                                      className="inline-flex items-center gap-1 text-sm text-gray-600
+                                                  hover:text-red-600 disabled:opacity-50"
+                                    >
+                                      <HiOutlineTrash className="h-4 w-4" />
+                                      Delete
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                      
+                              {/* empty state */}
+                              {decks.length === 0 && (
+                                <div className="col-span-full rounded-lg border border-dashed border-gray-300 p-10 text-center">
+                                  <p className="mb-4 text-gray-600">You don’t have any decks yet.</p>
+                                  <button
+                                    onClick={() => navigate('/decks/new')}
+                                    className="rounded-md bg-indigo-600 px-5 py-2 text-sm font-medium text-white
+                                                transition hover:bg-indigo-700"
+                                  >
+                                    Create your first deck
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </main>
 
                           {/* main column */}
-                          <main className="col-span-12 sm:col-span-8 lg:col-span-9">
+                          {/* <main className="col-span-12 sm:col-span-8 lg:col-span-9">
                             <CardContainer cardData={visibleCards} />
 
                             <div className="mt-6 flex justify-center gap-4">
@@ -320,7 +410,7 @@ export default function App() {
                                 Next »
                               </button>
                             </div>
-                          </main>
+                          </main> */}
                         </div>
                       </div>
                     </>
@@ -338,7 +428,7 @@ export default function App() {
                   path="/learn"
                   element={
                     <Learn
-                      selectedDeckId={selectedDeckId}
+                      // selectedDeckId={selectedDeckId}
                     />
                   }
                 />
