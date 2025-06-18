@@ -76,14 +76,11 @@ class CardViewSet(viewsets.ModelViewSet):
         # 1) deck‐visibility logic
         if user.is_authenticated:
             qs = qs.filter(
-                Q(deck__owner__isnull=True) |
-                Q(deck__owner=user)        |
-                Q(deck__shared=True)
+                Q(deck__owner__isnull=True) | Q(deck__owner=user) | Q(deck__shared=True)
             ).distinct()
         else:
             qs = qs.filter(
-                Q(deck__owner__isnull=True) |
-                Q(deck__shared=True)
+                Q(deck__owner__isnull=True) | Q(deck__shared=True)
             ).distinct()
 
         # 2) filter by deck parameter
@@ -105,8 +102,9 @@ class CardViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         deck = serializer.validated_data["deck"]
-        if deck.owner != self.request.user:
-            raise PermissionDenied("You can only add cards to your own decks.")
+        # --- REMOVE RESTRICTION: allow any authenticated user to add cards to any deck ---
+        # if deck.owner != self.request.user:
+        #     raise PermissionDenied("You can only add cards to your own decks.")
         card = serializer.save()
         # create the initial UserCard for the creator
         UserCard.objects.create(user=self.request.user, card=card)
@@ -157,21 +155,27 @@ class UserCardViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["post"])
     def reset(self, request):
         deck_id = request.query_params.get("deck")
+        deck_id_int = None
+        if deck_id is not None:
+            try:
+                deck_id_int = int(deck_id)
+            except (TypeError, ValueError):
+                return Response({"error": "Invalid deck id."}, status=400)
         qs = self.get_queryset()
-        if deck_id:
-            qs = qs.filter(card__deck_id=deck_id)
+        if deck_id_int is not None:
+            qs = qs.filter(card__deck_id=deck_id_int)
             # --- PATCH: ensure all UserCards exist for this user/deck ---
             from .models import Card, UserCard
             from django.utils import timezone
 
-            cards = Card.objects.filter(deck_id=deck_id)
+            cards = Card.objects.filter(deck_id=deck_id_int)
             now = timezone.now()
             for card in cards:
                 UserCard.objects.get_or_create(
                     user=request.user, card=card, defaults={"due_date": now}
                 )
             # refresh qs after possible creation
-            qs = self.get_queryset().filter(card__deck_id=deck_id)
+            qs = self.get_queryset().filter(card__deck_id=deck_id_int)
         # reset scheduling + rating + status for this user's cards in this deck only
         qs.update(
             last_rating="",  # must be empty string, not None

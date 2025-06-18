@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import fetchWithAuth from './api';
 import Editor from '@monaco-editor/react';
 import TagEditor from './TagEditor';
 
 
-export default function CreateCard({ decks, reloadCards }) {
+export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    deck: decks.length ? decks[0].id : '',
+    deck: defaultDeckId || (decks.length ? decks[0].id : ''),
     problem: '',
     difficulty: '',
     category: '',
@@ -17,8 +17,20 @@ export default function CreateCard({ decks, reloadCards }) {
     solution: '',
     complexity: '',
     tags: '',
+    data: '{}', // Add data field as required by backend
   });
   const [error, setError] = useState(null);
+
+  // Remove deck ownership restriction: allow card creation in any deck
+  const isAllowedDeck = () => true;
+
+  useEffect(() => {
+    if (defaultDeckId) {
+      setForm(f => ({ ...f, deck: defaultDeckId }));
+    } else if (decks.length > 0) {
+      setForm(f => ({ ...f, deck: decks[0].id }));
+    }
+  }, [defaultDeckId, decks]);
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -27,16 +39,24 @@ export default function CreateCard({ decks, reloadCards }) {
 
   const handleSubmit = async e => {
     e.preventDefault();
+    if (!isAllowedDeck()) {
+      setError('You can only add cards to your own decks or the Starter Deck.');
+      return;
+    }
     try {
+      const submitForm = { ...form, deck: form.deck };
       const res = await fetchWithAuth(
         `${import.meta.env.VITE_API_BASE_URL}/cards/`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
+          body: JSON.stringify(submitForm),
         },
       );
-      if (!res.ok) throw new Error(JSON.stringify(await res.json()));
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(JSON.stringify(errJson));
+      }
       reloadCards();
       navigate('/');
     } catch (err) {
@@ -57,24 +77,6 @@ export default function CreateCard({ decks, reloadCards }) {
       )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        {/* deck */}
-        <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700">Deck</label>
-          <select
-            name="deck"
-            value={form.deck}
-            onChange={handleChange}
-            required
-            className="rounded-md border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm shadow-sm
-                       focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-          >
-            {decks.map(d => (
-              <option key={d.id} value={d.id}>{d.name}</option>
-            ))}
-          </select>
-        </div>
-
         {/* simple inputs */}
         {['problem','difficulty','category','hint','complexity'].map(field => (
           <div key={field} className="flex flex-col">
@@ -140,6 +142,9 @@ export default function CreateCard({ decks, reloadCards }) {
             addButtonLabel="Add Tag"
           />
         </div>
+
+        {/* Hidden data field for backend compatibility */}
+        <input type="hidden" name="data" value={form.data} />
 
         {/* buttons */}
         <div className="col-span-full flex justify-end gap-4 pt-2">

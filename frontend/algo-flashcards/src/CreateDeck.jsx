@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import fetchWithAuth from './api'
 import './styles/CreateDeck.css'
+import TagEditor from './TagEditor'
 
 export default function CreateDeck({reloadDecks}) {
   const [form, setForm] = useState({ name: '', description: '' })
@@ -12,6 +13,10 @@ export default function CreateDeck({reloadDecks}) {
   const handleChange = e => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
   }
+
+  const handleTagsChange = tagsArr => {
+    setForm(f => ({ ...f, tags: tagsArr.join(',') }));
+  };
 
   const handleSubmit = async e => {
     e.preventDefault()
@@ -29,7 +34,6 @@ export default function CreateDeck({reloadDecks}) {
         const data = await res.json()
         throw new Error(JSON.stringify(data))
       }
-      const newDeck = await res.json()
       // go pick that deck in your dropdown
       reloadDecks();
       // nav('/', { state: { selectDeck: newDeck.id } })
@@ -59,6 +63,14 @@ export default function CreateDeck({reloadDecks}) {
             name="description"
             value={form.description}
             onChange={handleChange}
+          />
+        </label>
+        <label>
+          Tags
+          <TagEditor
+            tags={form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
+            onChange={handleTagsChange}
+            addButtonLabel="Add Tag"
           />
         </label>
         <button type="submit" className="save-btn">Create Deck</button>

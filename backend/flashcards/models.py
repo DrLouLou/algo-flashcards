@@ -3,31 +3,33 @@ from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-    
+
+
 class CardType(models.Model):
-    owner       = models.ForeignKey(settings.AUTH_USER_MODEL,
-                                    on_delete=models.CASCADE,
-                                    related_name="card_types")
-    name        = models.CharField(max_length=100)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="card_types"
+    )
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    fields      = models.JSONField(
-                   blank=True,
-                   default=list,
-                   help_text="List of JSON keys that each Card.data must include"
-                )
-    created_at  = models.DateTimeField(auto_now_add=True)
+    fields = models.JSONField(
+        blank=True,
+        default=list,
+        help_text="List of JSON keys that each Card.data must include",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
-    
+
+
 class Deck(models.Model):
     name = models.CharField(max_length=100)
-    card_type   = models.ForeignKey(
-                    CardType,
-                    on_delete=models.PROTECT,
-                    related_name="decks",
-                    help_text="What type of cards this deck contains"
-                 )
+    card_type = models.ForeignKey(
+        CardType,
+        on_delete=models.PROTECT,
+        related_name="decks",
+        help_text="What type of cards this deck contains",
+    )
     description = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(
@@ -40,19 +42,35 @@ class Deck(models.Model):
     shared = models.BooleanField(
         default=False, help_text="If true, this deck is visible to all users."
     )
+    tags = models.CharField(max_length=200, blank=True, default="")
 
     class Meta:
-        unique_together = ("card_type","name")
+        unique_together = ("card_type", "name")
         # prevent two decks with the same name under one type
+
+    def save(self, *args, **kwargs):
+        if self.tags:
+            tags = [t.strip().lower() for t in self.tags.split(",") if t.strip()]
+            # Remove duplicates while preserving order
+            seen = set()
+            tags = [t for t in tags if not (t in seen or seen.add(t))]
+            self.tags = ",".join(tags)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
 
-    
+
 class Card(models.Model):
     deck = models.ForeignKey(Deck, on_delete=models.CASCADE, related_name="cards")
-    card_type  = models.ForeignKey(CardType, on_delete=models.PROTECT, related_name="cards", null=True, blank=True)
-    data       = models.JSONField(blank=True, default=dict, help_text="A dict whose keys must come from card_type.fields")
+    card_type = models.ForeignKey(
+        CardType, on_delete=models.PROTECT, related_name="cards", null=True, blank=True
+    )
+    data = models.JSONField(
+        blank=True,
+        default=dict,
+        help_text="A dict whose keys must come from card_type.fields",
+    )
     problem = models.CharField(max_length=100, blank=False)
     difficulty = models.CharField(max_length=50, blank=False)
     category = models.CharField(max_length=100, blank=True, default="")
@@ -60,9 +78,7 @@ class Card(models.Model):
     pseudo = models.TextField(blank=True, default="")
     solution = models.TextField(blank=True, default="")
     complexity = models.TextField(blank=True, default="")
-    tags = models.CharField(
-        max_length=200, blank=True, default=""
-    )
+    tags = models.CharField(max_length=200, blank=True, default="")
 
     def save(self, *args, **kwargs):
         if self.tags:
@@ -77,11 +93,11 @@ class Card(models.Model):
     def clean(self):
         # enforce that data only contains the fields declared in CardType
         allowed = set(self.card_type.fields or [])
-        given   = set(self.data.keys())
-        bad     = given - allowed
+        given = set(self.data.keys())
+        bad = given - allowed
         if bad:
             raise ValidationError(
-                { "data": f"Invalid keys in data: {bad}. Allowed: {allowed}" }
+                {"data": f"Invalid keys in data: {bad}. Allowed: {allowed}"}
             )
 
     def __str__(self):
@@ -123,23 +139,21 @@ class UserCard(models.Model):
         unique_together = ("user", "card")
 
 
-
 class ChatGPTRequest(models.Model):
-    user       = models.ForeignKey(settings.AUTH_USER_MODEL,
-                                   on_delete=models.CASCADE,
-                                   related_name="chat_requests")
-    card_type  = models.ForeignKey(
-                     CardType,
-                     null=True,
-                     blank=True,
-                     on_delete=models.SET_NULL,
-                     related_name="chat_requests",
-                     help_text="Which CardType this request was targeting"
-                 )
-    prompt     = models.TextField()
-    response   = models.TextField()
-    endpoint   = models.CharField(max_length=100,
-                                  help_text="e.g. `/v1/chat/completions`")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="chat_requests"
+    )
+    card_type = models.ForeignKey(
+        CardType,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="chat_requests",
+        help_text="Which CardType this request was targeting",
+    )
+    prompt = models.TextField()
+    response = models.TextField()
+    endpoint = models.CharField(max_length=100, help_text="e.g. `/v1/chat/completions`")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

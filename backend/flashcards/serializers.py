@@ -35,38 +35,49 @@ class RegisterSerializer(serializers.ModelSerializer):
 class CardSerializer(serializers.ModelSerializer):
     data = serializers.JSONField()
     # Still return the old field names for reads:
-    problem    = serializers.CharField(source="data.problem",    read_only=True)
+    problem = serializers.CharField(source="data.problem", read_only=True)
     difficulty = serializers.CharField(source="data.difficulty", read_only=True)
-    category   = serializers.CharField(source="data.category",   read_only=True)
-    hint       = serializers.CharField(source="data.hint",       read_only=True)
-    pseudo     = serializers.CharField(source="data.pseudo",     read_only=True)
-    solution   = serializers.CharField(source="data.solution",   read_only=True)
+    category = serializers.CharField(source="data.category", read_only=True)
+    hint = serializers.CharField(source="data.hint", read_only=True)
+    pseudo = serializers.CharField(source="data.pseudo", read_only=True)
+    solution = serializers.CharField(source="data.solution", read_only=True)
     complexity = serializers.CharField(source="data.complexity", read_only=True)
-    tags       = serializers.CharField(source="data.tags",       read_only=True)
+    tags = serializers.CharField(source="data.tags", read_only=True)
 
     class Meta:
         model = Card
         fields = [
-            "id", "deck", "card_type", "data",
-            "problem","difficulty","category",
-            "hint","pseudo","solution","complexity","tags",
+            "id",
+            "deck",
+            "card_type",
+            "data",
+            "problem",
+            "difficulty",
+            "category",
+            "hint",
+            "pseudo",
+            "solution",
+            "complexity",
+            "tags",
         ]
 
     def validate(self, attrs):
         # Enforce that the JSON you POST matches your CardType.fields
         data = attrs.get("data", {})
-        ct   = attrs.get("card_type") or getattr(self.instance, "card_type", None)
+        ct = attrs.get("card_type") or getattr(self.instance, "card_type", None)
         if ct:
             allowed = set(ct.fields or [])
-            given   = set(data.keys())
-            extra   = given - allowed
+            given = set(data.keys())
+            extra = given - allowed
             missing = allowed - given
             if extra or missing:
                 msg = {}
                 if extra:
                     msg["data"] = f"Unexpected keys: {sorted(extra)}"
                 if missing:
-                    msg["data"] = msg.get("data", "") + f" Missing keys: {sorted(missing)}"
+                    msg["data"] = (
+                        msg.get("data", "") + f" Missing keys: {sorted(missing)}"
+                    )
                 raise serializers.ValidationError(msg)
         return super().validate(attrs)
 
@@ -75,10 +86,20 @@ class DeckSerializer(serializers.ModelSerializer):
     cards = CardSerializer(many=True, read_only=True)
     owner = serializers.ReadOnlyField(source="owner.username")
     shared = serializers.BooleanField(required=False)
+    tags = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = Deck
-        fields = ["id", "name", "description", "created_at", "owner", "cards", "shared"]
+        fields = [
+            "id",
+            "name",
+            "description",
+            "created_at",
+            "owner",
+            "cards",
+            "shared",
+            "tags",
+        ]
 
 
 class UserCardSerializer(serializers.ModelSerializer):

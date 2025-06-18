@@ -63,6 +63,13 @@ export default function ManageDecks({
             <p className="mb-4 line-clamp-3 text-sm text-gray-600">
               {d.description || 'No description'}
             </p>
+            {d.tags && (
+              <div className="mb-2 flex flex-wrap gap-1">
+                {d.tags.split(',').filter(Boolean).map(tag => (
+                  <span key={tag} className="inline-block bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs">{tag}</span>
+                ))}
+              </div>
+            )}
 
             {/* action bar (appears on hover) */}
             <div className="absolute inset-x-0 bottom-0 flex justify-between

@@ -1,6 +1,6 @@
 // src/Learn.jsx
 import React, { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
 import fetchWithAuth from './api'
 import ChartDropdown from './ChartDropdown.jsx'
@@ -10,7 +10,10 @@ import ProgressBar from './ProgressBar.jsx';
 
 import './styles/Learn.css'
 
-export default function Learn({ selectedDeckId }) {
+export default function Learn() {
+  const { deckId } = useParams();
+  const selectedDeckId = deckId;
+
   const [queue, setQueue]       = useState([])
   const [distribution, setDistribution] = useState({
     none: 0, again: 0, hard: 0, good: 0, easy: 0
@@ -243,6 +246,10 @@ export default function Learn({ selectedDeckId }) {
   // called once user confirms in modal
   const doResetAll = () => {
     setShowConfirm(false);
+    if (!selectedDeckId) {
+      alert('No deck selected. Please select a deck to reset progress.');
+      return;
+    }
     fetchWithAuth(`${API}/usercards/reset/?deck=${selectedDeckId}`, {
       method: 'POST',
     })
@@ -300,6 +307,10 @@ export default function Learn({ selectedDeckId }) {
       <div className="top-button-row">
         <button onClick={() => {
           (async () => {
+            if (!selectedDeckId) {
+              alert('No deck selected. Please select a deck to reset progress.');
+              return;
+            }
             await fetchWithAuth(`${API}/usercards/reset/?deck=${selectedDeckId}`, { method: 'POST' });
             resetLearnState();
             setTimeout(() => {
@@ -418,7 +429,6 @@ export default function Learn({ selectedDeckId }) {
                   ))}
                 </div>
               </div>
-
             </div>
           </div>
         </div>
