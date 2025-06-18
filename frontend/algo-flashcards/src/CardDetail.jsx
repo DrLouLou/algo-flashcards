@@ -86,7 +86,7 @@ export default function CardDetail() {
         <button>Back</button>
       </Link>
       <div className="card-detail container">
-        <h1>{formData.problem}</h1>
+        <h1>{formData.data.problem}</h1>
         {/* TAGS: show in both modes */}
         <div className="mb-4">
           <strong>Tags:</strong>{' '}
@@ -126,7 +126,7 @@ export default function CardDetail() {
                 <input
                 type="text"
                 name="difficulty"
-                value={formData.difficulty}
+                value={formData.data.difficulty}
                 onChange={handleChange}
                 />
             </label>
@@ -136,7 +136,7 @@ export default function CardDetail() {
                 <input
                 type="text"
                 name="category"
-                value={formData.category}
+                value={formData.data.category}
                 onChange={handleChange}
                 />
             </label>
@@ -146,7 +146,7 @@ export default function CardDetail() {
                 <input
                 type="text"
                 name="hint"
-                value={formData.hint}
+                value={formData.data.hint}
                 onChange={handleChange}
                 />
             </label>
@@ -155,7 +155,7 @@ export default function CardDetail() {
                 Pseudocode
                 <textarea
                 name="pseudo"
-                value={formData.pseudo}
+                value={formData.data.pseudo}
                 onChange={handleChange}
                 />
             </label>
@@ -165,7 +165,7 @@ export default function CardDetail() {
                 <Editor
                 height="300px"
                 defaultLanguage="javascript"
-                value={formData.solution}
+                value={formData.data.solution}
                 onChange={(value) =>
                     setFormData(prev => ({ ...prev, solution: value }))
                 }
@@ -183,7 +183,7 @@ export default function CardDetail() {
                 <input
                 type="text"
                 name="complexity"
-                value={formData.complexity}
+                value={formData.data.complexity}
                 onChange={handleChange}
                 />
             </label>
@@ -196,8 +196,8 @@ export default function CardDetail() {
                 <>
                 <h2>Difficulty</h2>
                 <p>
-                    <span className={`difficulty-text ${formData.difficulty.toLowerCase()}`}>
-                    {formData.difficulty}
+                    <span className={`difficulty-text ${formData.data.difficulty.toLowerCase()}`}>
+                    {formData.data.difficulty}
                     </span>
                 </p>
 
@@ -208,7 +208,7 @@ export default function CardDetail() {
                     {showHint && (
                     <>
                         <h3>Hint</h3>
-                        <p>{formData.hint}</p>
+                        <p>{formData.data.hint}</p>
                     </>
                     )}
                 </div>
@@ -220,7 +220,7 @@ export default function CardDetail() {
                 <Editor
                     height="300px"
                     defaultLanguage="python"
-                    value={formData.pseudo}
+                    value={formData.data.pseudo}
                     options={{
                     readOnly: true,
                     minimap: { enabled: false },
@@ -233,7 +233,7 @@ export default function CardDetail() {
                 <Editor
                     height="300px"
                     defaultLanguage="python"
-                    value={formData.solution}
+                    value={formData.data.solution}
                     options={{
                     readOnly: true,
                     minimap: { enabled: false },
@@ -244,7 +244,7 @@ export default function CardDetail() {
                 </div>
 
                 <h2>Complexity</h2>
-                <p>{formData.complexity}</p>
+                <p>{formData.data.complexity}</p>
                 </>
             )}
             </>

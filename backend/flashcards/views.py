@@ -67,33 +67,39 @@ class CardViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsDeckOwnerOrReadOnly]
     pagination_class = CardCursorPagination
     serializer_class = CardSerializer
-    filterset_fields = ["deck", "difficulty", "tags"]
+    # filterset_fields = ["deck", "difficulty", "tags"]
 
     def get_queryset(self):
         user = self.request.user
         qs = Card.objects.all()
 
-        # 1) filter out any cards in decks you shouldn't see
+        # 1) deck‐visibility logic
         if user.is_authenticated:
             qs = qs.filter(
-                Q(deck__owner__isnull=True)  # global decks
-                | Q(deck__owner=user)  # your own decks
-                | Q(deck__shared=True)  # shared decks
+                Q(deck__owner__isnull=True) |
+                Q(deck__owner=user)        |
+                Q(deck__shared=True)
             ).distinct()
         else:
             qs = qs.filter(
-                Q(deck__owner__isnull=True) | Q(deck__shared=True)
+                Q(deck__owner__isnull=True) |
+                Q(deck__shared=True)
             ).distinct()
 
-        # 2) if the frontend passed a ?deck=, apply that
+        # 2) filter by deck parameter
         deck_id = self.request.query_params.get("deck")
-        if deck_id is not None:
+        if deck_id:
             qs = qs.filter(deck_id=deck_id)
 
-        # 3) filter by tag if provided
+        # 3) filter by difficulty in JSON
+        diff = self.request.query_params.get("difficulty")
+        if diff:
+            qs = qs.filter(data__difficulty=diff)
+
+        # 4) filter by tag (substring match) in JSON
         tag = self.request.query_params.get("tag")
         if tag:
-            qs = qs.filter(tags__icontains=tag)
+            qs = qs.filter(data__tags__icontains=tag)
 
         return qs
 

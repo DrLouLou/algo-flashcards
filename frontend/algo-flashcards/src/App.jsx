@@ -38,6 +38,7 @@ export default function App() {
   const [selectedDifficulties, setSelectedDifficulties] = useState([]);
   const [selectedTags, setSelectedTags]       = useState([]);
 
+
   /* ---------- helpers ---------- */
   const goNext = () => {
     if (!nextURL) return;
@@ -120,10 +121,9 @@ export default function App() {
   };
   
   // Tag filter logic
-  const allTags = Array.from(new Set(cards.flatMap(c => (c.tags || '').split(',').map(t => t.trim()).filter(Boolean))));
+  const allTags = Array.from(new Set(cards.flatMap(c => ((c.data?.tags || '').split(',')).map(t => t.trim()).filter(Boolean))));
   const visibleCards =
-    (selectedDifficulties.length === 0 ? cards : cards.filter(c => selectedDifficulties.includes(c.difficulty)))
-      .filter(c => selectedTags.length === 0 || (c.tags && selectedTags.every(tag => c.tags.split(',').includes(tag))));
+    (selectedDifficulties.length === 0 ? cards : cards.filter(c => selectedDifficulties.includes(c.data?.difficulty))).filter(c => selectedTags.length === 0 || ((c.data?.tags || '').split(',').includes) && selectedTags.every(tag => (c.data?.tags || '').split(',').includes(tag)));
 
   // Persist selectedDeckId in localStorage
   useEffect(() => {

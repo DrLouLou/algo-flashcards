@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
 function Card({ card }) {
-  /* difficulty → color map */
+
   const COLORS = {
     easy:   'text-green-600',
     medium: 'text-yellow-500',
@@ -12,14 +12,14 @@ function Card({ card }) {
     <div className="flex h-full flex-col gap-4 p-6">
       {/* title */}
       <h3 className="text-lg font-semibold leading-snug text-gray-900">
-        {card.problem}
+        {card.data.problem}
       </h3>
 
       {/* difficulty badge */}
       <p className="text-sm text-gray-600">
         <span className="font-medium">Difficulty:</span>{' '}
-        <span className={`${COLORS[card.difficulty.toLowerCase()]}`}>
-          {card.difficulty}
+        <span className={`${COLORS[card.data.difficulty.toLowerCase()]}`}>
+          {card.data.difficulty}
         </span>
       </p>
 
