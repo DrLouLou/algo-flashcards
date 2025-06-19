@@ -52,10 +52,9 @@ exit()
 
 python manage.py import_anki anki_cards.txt
 
-# To wipe dev database
-
-delete db.sqlite file
-run python manage.py migrate
+# To wipe dev database (from /algo-flashcards)
+rm backend/db.sqlite
+python manage.py migrate
 
 # For running Docker
 
