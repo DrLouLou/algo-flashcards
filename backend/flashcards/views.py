@@ -13,12 +13,13 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
 from flashcards.pagination import CardCursorPagination
-from .models import Deck, Card, UserCard
+from .models import Deck, Card, UserCard, CardType
 from .serializers import (
     DeckSerializer,
     CardSerializer,
     RegisterSerializer,
     UserCardSerializer,
+    CardTypeSerializer,
 )
 from .permissions import IsOwnerOrReadOnly, IsDeckOwnerOrReadOnly
 
@@ -43,11 +44,13 @@ class DeckViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated:
-            # Show user's own decks, global decks, and shared decks
-            return Deck.objects.filter(
-                Q(owner=user) | Q(owner__isnull=True) | Q(shared=True)
-            ).distinct()
-        return Deck.objects.filter(Q(owner__isnull=True) | Q(shared=True)).distinct()
+            qs = Deck.objects.filter(owner=user)
+            # If superuser, also include the Starter Deck (even if not owner)
+            if user.is_superuser:
+                starter = Deck.objects.filter(name="Starter Deck")
+                qs = qs | starter
+            return qs.distinct()
+        return Deck.objects.none()
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -61,44 +64,49 @@ class DeckViewSet(viewsets.ModelViewSet):
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # Allow any superuser to access the Starter Deck
+        if instance.name == "Starter Deck" and request.user.is_superuser:
+            return super().retrieve(request, *args, **kwargs)
+        if instance.owner != request.user:
+            return Response({"detail": "Not found."}, status=404)
+        return super().retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.owner != request.user:
+            return Response({"detail": "Not found."}, status=404)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.owner != request.user:
+            return Response({"detail": "Not found."}, status=404)
+        return super().destroy(request, *args, **kwargs)
+
 
 class CardViewSet(viewsets.ModelViewSet):
     queryset = Card.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly, IsDeckOwnerOrReadOnly]
     pagination_class = CardCursorPagination
     serializer_class = CardSerializer
-    # filterset_fields = ["deck", "difficulty", "tags"]
 
     def get_queryset(self):
         user = self.request.user
-        qs = Card.objects.all()
-
-        # 1) deck‐visibility logic
         if user.is_authenticated:
-            qs = qs.filter(
-                Q(deck__owner__isnull=True) | Q(deck__owner=user) | Q(deck__shared=True)
-            ).distinct()
-        else:
-            qs = qs.filter(
-                Q(deck__owner__isnull=True) | Q(deck__shared=True)
-            ).distinct()
-
-        # 2) filter by deck parameter
-        deck_id = self.request.query_params.get("deck")
-        if deck_id:
-            qs = qs.filter(deck_id=deck_id)
-
-        # 3) filter by difficulty in JSON
-        diff = self.request.query_params.get("difficulty")
-        if diff:
-            qs = qs.filter(data__difficulty=diff)
-
-        # 4) filter by tag (substring match) in JSON
-        tag = self.request.query_params.get("tag")
-        if tag:
-            qs = qs.filter(data__tags__icontains=tag)
-
-        return qs
+            # User's own cards
+            qs = Card.objects.filter(deck__owner=user)
+            # Also include cards in the Starter Deck for any authenticated user
+            starter_deck = Deck.objects.filter(name="Starter Deck", owner=None).first()
+            if starter_deck:
+                qs = qs | Card.objects.filter(deck=starter_deck)
+            # If superuser, this is redundant but harmless
+            deck_id = self.request.query_params.get("deck")
+            if deck_id:
+                qs = qs.filter(deck_id=deck_id)
+            return qs.distinct()
+        return Card.objects.none()
 
     def perform_create(self, serializer):
         deck = serializer.validated_data["deck"]
@@ -108,6 +116,50 @@ class CardViewSet(viewsets.ModelViewSet):
         card = serializer.save()
         # create the initial UserCard for the creator
         UserCard.objects.create(user=self.request.user, card=card)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # Allow any superuser to access any card
+        if request.user.is_superuser:
+            return super().retrieve(request, *args, **kwargs)
+        # Allow any authenticated user to access cards in the Starter Deck
+        if (
+            instance.deck.owner is None
+            and instance.deck.name == "Starter Deck"
+            and request.user.is_authenticated
+        ):
+            return super().retrieve(request, *args, **kwargs)
+        if instance.deck.owner != request.user:
+            return Response({"detail": "Not found."}, status=404)
+        return super().retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user.is_superuser:
+            return super().update(request, *args, **kwargs)
+        if (
+            instance.deck.owner is None
+            and instance.deck.name == "Starter Deck"
+            and request.user.is_authenticated
+        ):
+            return super().update(request, *args, **kwargs)
+        if instance.deck.owner != request.user:
+            return Response({"detail": "Not found."}, status=404)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user.is_superuser:
+            return super().destroy(request, *args, **kwargs)
+        if (
+            instance.deck.owner is None
+            and instance.deck.name == "Starter Deck"
+            and request.user.is_authenticated
+        ):
+            return super().destroy(request, *args, **kwargs)
+        if instance.deck.owner != request.user:
+            return Response({"detail": "Not found."}, status=404)
+        return super().destroy(request, *args, **kwargs)
 
 
 class UserCardViewSet(viewsets.ModelViewSet):
@@ -299,3 +351,42 @@ class MeView(APIView):
                 "email": user.email,
             }
         )
+
+
+class CardTypeViewSet(viewsets.ModelViewSet):
+    serializer_class = CardTypeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        # Only allow users to see their own CardTypes
+        return CardType.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        # DEBUG: Log the user for troubleshooting
+        import logging
+
+        logger = logging.getLogger("flashcards.cardtype")
+        logger.warning(
+            f"[DEBUG] perform_create: user={self.request.user} is_authenticated={self.request.user.is_authenticated}"
+        )
+        # Ensure the owner is set to the current user
+        serializer.save(owner=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.owner != request.user:
+            return Response({"detail": "Not found."}, status=404)
+        return super().retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.owner != request.user:
+            return Response({"detail": "Not found."}, status=404)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.owner != request.user:
+            return Response({"detail": "Not found."}, status=404)
+        return super().destroy(request, *args, **kwargs)

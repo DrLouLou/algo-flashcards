@@ -7,6 +7,7 @@ import ChartDropdown from './ChartDropdown.jsx'
 import { useSettings } from './SettingsContext';
 import ProgressBar from './ProgressBar.jsx';
 // import StudyAlarm from './StudyAlarm';
+import { getCardLayout } from './cardLayoutUtils';
 
 import './styles/Learn.css'
 
@@ -20,19 +21,14 @@ export default function Learn() {
   })
 //   console.log("distribution is: ", distribution)
   const [isFlipped, setIsFlipped] = useState(false)
-  const [showHint, setShowHint] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)   // <-- new
   const navigate                = useNavigate()
   const API                     = import.meta.env.VITE_API_BASE_URL
   const { settings } = useSettings();
-  const [userInput, setUserInput] = useState('');
-  const [showAnswerInput, setShowAnswerInput] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
   // Find current deck name
   const [deckName, setDeckName] = useState('');
   const [totalCards, setTotalCards] = useState(0);
-  // Add a state to control if answer is revealed
-  const [revealed, setRevealed] = useState(false);
   // Add a loading state for stats and progress
   const [loading, setLoading] = useState(true);
 
@@ -40,18 +36,10 @@ export default function Learn() {
   const goNext = useCallback(() => {
     setCurrentIdx(i => (i < queue.length - 1 ? i + 1 : i));
     setIsFlipped(false);
-    setShowHint(false);
-    setUserInput('');
-    setShowAnswerInput(true);
-    setRevealed(false);
   }, [queue.length]);
   const goPrev = useCallback(() => {
     setCurrentIdx(i => (i > 0 ? i - 1 : i));
     setIsFlipped(false);
-    setShowHint(false);
-    setUserInput('');
-    setShowAnswerInput(true);
-    setRevealed(false);
   }, []);
 
   // 1) fetch the “due now” queue
@@ -69,7 +57,6 @@ export default function Learn() {
           last_rating: uc.last_rating
         })))
         setIsFlipped(false)
-        setShowHint(false)
         // Clamp currentIdx if out of bounds
         setCurrentIdx(idx => (items.length === 0 ? 0 : Math.min(idx, items.length - 1)))
       })
@@ -145,14 +132,10 @@ export default function Learn() {
     setQueue([]);
     setDistribution({ none: 0, again: 0, hard: 0, good: 0, easy: 0 });
     setIsFlipped(false);
-    setShowHint(false);
     setShowConfirm(false);
-    setUserInput('');
-    setShowAnswerInput(true);
     setCurrentIdx(0);
     setDeckName('');
     setTotalCards(0);
-    setRevealed(false);
     setLoading(true);
   }, []);
 
@@ -200,6 +183,8 @@ export default function Learn() {
   // Clamp currentIdx if queue shrinks (defensive, in case of async updates)
   const safeIdx = Math.max(0, Math.min(currentIdx, queue.length - 1));
   const card = queue[safeIdx] || queue[0];
+  const cardType = card?.deck?.card_type || card?.card_type || {};
+  const { front: frontFields, back: backFields } = getCardLayout(cardType, card?.data);
 
   // handle rating
   function handleRating(rating) {
@@ -222,25 +207,16 @@ export default function Learn() {
             // Immediately update stats after queue update
             fetchDistribution();
             fetchTotalCards();
-            setShowAnswerInput(true);
-            setRevealed(false);
-            setUserInput('');
             return q;
           });
         });
       })
       .catch(console.error);
     setIsFlipped(false);
-    setShowHint(false);
   }
 
   const handleFlip = () => {
     setIsFlipped(f => !f);
-    setShowHint(false);
-    if (!isFlipped) {
-      setShowAnswerInput(false);
-      setRevealed(true);
-    }
   }
 
   // called once user confirms in modal
@@ -263,10 +239,6 @@ export default function Learn() {
         fetchTotalCards();
         setCurrentIdx(0); // Go to first flashcard after reset
         setIsFlipped(false);
-        setShowHint(false);
-        setUserInput('');
-        setShowAnswerInput(true);
-        setRevealed(false);
       })
       .catch(console.error);
   }
@@ -367,56 +339,44 @@ export default function Learn() {
             }}
           >
             <div className="flip-inner">
-
-              {/* FRONT: show full-deck distribution */}
+              {/* FRONT: use layout.front */}
               <div className="flip-front">
-                <div className="rating-summary">
-                  {/* <span className="none-text">None: {distribution.none}</span> */}
-                  <span className="again-text">Again: {distribution.again}</span>
-                  <span className="hard-text">Hard: {distribution.hard}</span>
-                  <span className="good-text">Good: {distribution.good}</span>
-                  <span className="easy-text">Easy: {distribution.easy}</span>
-                </div>
-
-                <h3 className="learn-problem">{card.problem}</h3>
-
-                <p>
-                  <strong>Difficulty:</strong>{' '}
-                  <span className={`diff-text ${card.difficulty.toLowerCase()}`}>
-                    {card.difficulty}
-                  </span>
-                </p>
-
-                <button
-                  onClick={() => setShowHint(h => !h)}
-                  className="hint-btn"
-                >
-                  {showHint ? 'Hide Hint' : 'Show Hint'}
-                </button>
-                {showHint && <p>{card.hint}</p>}
+                {frontFields.map(field => (
+                  <div key={field} className="mb-2">
+                    <span className="font-semibold capitalize text-gray-800">{field}:</span>{' '}
+                    {field === 'difficulty' ? (
+                      <span className={`diff-text ${(card.data?.[field] || '').toLowerCase()}`}>{card.data?.[field]}</span>
+                    ) : (
+                      <span>{card.data?.[field]}</span>
+                    )}
+                  </div>
+                ))}
               </div>
-
-              {/* BACK: code + rating buttons */}
+              {/* BACK: use layout.back */}
               <div className="flip-back">
-                <h3>Pseudocode</h3>
-                <Editor
-                  height="200px"
-                  defaultLanguage="python"
-                  value={card.pseudo}
-                  options={{ readOnly: true, minimap: { enabled: false }, wordWrap: 'on' }}
-                />
-
-                <h3>Solution</h3>
-                <Editor
-                  height="200px"
-                  defaultLanguage="javascript"
-                  value={card.solution}
-                  options={{ readOnly: true, minimap: { enabled: false }, wordWrap: 'on' }}
-                />
-
-                <h3>Complexity</h3>
-                <p>{card.complexity}</p>
-
+                {backFields.length > 0 ? backFields.map(field => (
+                  <div key={field} className="mb-2">
+                    <span className="font-semibold capitalize text-gray-800">{field}:</span>{' '}
+                    {field === 'solution' ? (
+                      <Editor
+                        height="200px"
+                        defaultLanguage="python"
+                        value={card.data?.[field] || ''}
+                        options={{ readOnly: true, minimap: { enabled: false }, wordWrap: 'on' }}
+                      />
+                    ) : field === 'pseudo' ? (
+                      <Editor
+                        height="200px"
+                        defaultLanguage="python"
+                        value={card.data?.[field] || ''}
+                        options={{ readOnly: true, minimap: { enabled: false }, wordWrap: 'on' }}
+                      />
+                    ) : (
+                      <span>{card.data?.[field]}</span>
+                    )}
+                  </div>
+                )) : <div className="text-gray-400 italic">No back fields defined.</div>}
+                {/* ...existing code for rating buttons... */}
                 <div className="learn-button-row">
                   {['again','hard','good','easy'].map(r => (
                     <button
@@ -433,7 +393,6 @@ export default function Learn() {
           </div>
         </div>
       </div>
-
       {/* always-visible flip toggle */}
       <button onClick={handleFlip} className="flip-btn">
         {isFlipped ? 'Show Front' : 'Show Back'}

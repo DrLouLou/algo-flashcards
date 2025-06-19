@@ -28,6 +28,7 @@ import { SettingsProvider } from './SettingsContext';
 import SettingsPanel from './SettingsPanel';
 import TagEditor      from './TagEditor';
 import ManageDecks from './ManageDecks'
+import CardTypeManager from './CardTypeManager';
 import './styles/App.css';
 
 
@@ -57,6 +58,9 @@ class ErrorBoundary extends React.Component {
 
 function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, selectedDeckTags, setSelectedDeckTags, reloadDecks }) {
   const navigate = useNavigate();
+  const [showCardTypeModal, setShowCardTypeModal] = useState(false);
+
+  /* ---------- state ---------- */
 
   /* ---------- helpers ---------- */
   // const goNext = () => {
@@ -120,6 +124,10 @@ function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, select
         }}
         showLogout={!!token}
       />
+      {showCardTypeModal && (
+        <CardTypeManager open={showCardTypeModal} onClose={() => setShowCardTypeModal(false)} />
+      )}
+      {/* main content */}
       <div className="main-content pt-16">
         <Routes>
           {/* ---------- PUBLIC ---------- */}
@@ -275,46 +283,49 @@ function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, select
                                 className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
                               >
                                 <HiPlus className="h-5 w-5" />
-                                New
+                                New Deck
                               </button>
                               <button
-                                onClick={() => navigate('/decks/manage')}
+                                onClick={() => setShowCardTypeModal(true)}
                                 className="inline-flex items-center gap-2 rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-300"
                               >
-                                <HiOutlinePencil className="h-5 w-5" />
-                                Manage Decks
+                                <HiPlus className="h-5 w-5" />
+                                New Card Type
                               </button>
                             </div>
                           </div>
                     
                           {/* deck grid */}
                           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                            {visibleDecks.map(d => (
-                              <Link key={d.id} to={`/decks/${d.id}`} className="group relative rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-lg block">
-                                <h3 className="mb-1 truncate text-lg font-semibold">{d.name}</h3>
-                                <p className="mb-4 line-clamp-3 text-sm text-gray-600">{d.description || 'No description'}</p>
+                            {visibleDecks.map(d => {
+                              const kebab = d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                              return (
+                                <Link key={d.id} to={`/decks/${kebab}`} state={{ id: d.id }} className="group relative rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-lg block">
+                                  <h3 className="mb-1 truncate text-lg font-semibold">{d.name}</h3>
+                                  <p className="mb-4 line-clamp-3 text-sm text-gray-600">{d.description || 'No description'}</p>
                     
-                                {/* action bar (appears on hover) */}
-                                <div className="absolute inset-x-0 bottom-0 flex justify-between border-t border-gray-200 bg-gray-50 px-4 py-2 opacity-0 transition group-hover:opacity-100">
-                                  <button
-                                    onClick={e => { e.preventDefault(); navigate(`/decks/${d.id}/edit`); }}
-                                    className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-indigo-600"
-                                  >
-                                    <HiOutlinePencil className="h-4 w-4" />
-                                    Edit
-                                  </button>
+                                  {/* action bar (appears on hover) */}
+                                  <div className="absolute inset-x-0 bottom-0 flex justify-between border-t border-gray-200 bg-gray-50 px-4 py-2 opacity-0 transition group-hover:opacity-100">
+                                    <button
+                                      onClick={e => { e.preventDefault(); navigate(`/decks/${d.id}/edit`); }}
+                                      className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-indigo-600"
+                                    >
+                                      <HiOutlinePencil className="h-4 w-4" />
+                                      Edit
+                                    </button>
                     
-                                  <button
-                                    disabled={busyId === d.id}
-                                    onClick={e => { e.preventDefault(); handleDelete(d.id); }}
-                                    className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-red-600 disabled:opacity-50"
-                                  >
-                                    <HiOutlineTrash className="h-4 w-4" />
-                                    Delete
-                                  </button>
-                                </div>
-                              </Link>
-                            ))}
+                                    <button
+                                      disabled={busyId === d.id}
+                                      onClick={e => { e.preventDefault(); handleDelete(d.id); }}
+                                      className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-red-600 disabled:opacity-50"
+                                    >
+                                      <HiOutlineTrash className="h-4 w-4" />
+                                      Delete
+                                    </button>
+                                  </div>
+                                </Link>
+                              );
+                            })}
                     
                             {/* empty state */}
                             {decks.length === 0 && (
@@ -362,18 +373,19 @@ function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, select
               {/* misc routes */}
               <Route path="/about"      element={<About />} />
               <Route path="/generate"   element={<Generate />} />
-              <Route path="/cards/:id"  element={<CardDetail />} />
+              {/* Card detail: slug only */}
+              <Route path="/cards/:slug"  element={<CardDetail decks={decks} />} />
               <Route path="/cards/new"  element={<CreateCard decks={decks} />} />
               <Route path="/decks/new"  element={<CreateDeck reloadDecks={reloadDecks} />} />
-              <Route path="/decks/manage"  element={<ManageDecks decks={decks} reloadDecks={reloadDecks} />} />
               <Route
                 path="/learn/:deckId"
                 element={<Learn />}
               />
               <Route path="/profile" element={<Profile />} />
               <Route path="/alarm" element={<StudyAlarm />} />
+              {/* Deck detail: slug only */}
               <Route
-                path="/decks/:id"
+                path="/decks/:slug"
                 element={<DeckDetail decks={decks} reloadDecks={reloadDecks} />}
               />
             </>

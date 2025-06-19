@@ -1,35 +1,99 @@
 import Editor from '@monaco-editor/react'
-import { useState, useEffect, useRef } from 'react'
-
-import { useParams, Link } from 'react-router-dom'
+import { useState, useEffect, useMemo } from 'react'
+import { useParams, useLocation, useNavigate, Link } from 'react-router-dom'
 import fetchWithAuth from './api'
 import './styles/CardDetail.css'
 import TagEditor from './TagEditor'
+import { getCardLayout } from './cardLayoutUtils';
 
-export default function CardDetail() {
-  const { id } = useParams()
-  const [formData, setFormData] = useState(null)
-  const [initialData, setInitialData] = useState(null)
-  const [isEditing, setIsEditing] = useState(false)
-  const [isFlipped, setIsFlipped] = useState(false)
-  const [showHint, setShowHint] = useState(false)
-  const API = import.meta.env.VITE_API_BASE_URL
-  const editorRef = useRef(null)
+export default function CardDetail({ decks }) {
+  const { slug } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState(null);
+  const [initialData, setInitialData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const API = import.meta.env.VITE_API_BASE_URL;
+
+  // Always use formData.deck as object if present
+  const deckObj = formData && formData.deck && typeof formData.deck === 'object' ? formData.deck :
+    (formData && formData.deck ? (decks ? decks.find(d => String(d.id) === String(formData.deck)) : null) : null);
+  const cardType = deckObj?.card_type || (formData && formData.card_type) || {};
+  const { front: frontFields, back: backFields } = getCardLayout(cardType, formData?.data);
+
+  // Try to get cards from navigation state (DeckDetail passes them), else fallback to decks
+  const cardsFromState = location.state && location.state.cards;
+
+  const cardId = useMemo(() => {
+    if (location.state && location.state.id) return location.state.id;
+    // Use cards from navigation state if available
+    if (cardsFromState) {
+      const match = cardsFromState.find(c => {
+        const kebab = (c.data.problem || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        return kebab === slug;
+      });
+      if (match) return match.id;
+    }
+    // fallback: look up by slug from all decks' cards (legacy, less reliable)
+    if (decks) {
+      for (const deck of decks) {
+        if (deck.cards) {
+          const match = deck.cards.find(c => {
+            const kebab = (c.data.problem || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            return kebab === slug;
+          });
+          if (match) return match.id;
+        }
+      }
+    }
+    return null;
+  }, [location.state, slug, decks, cardsFromState]);
 
   useEffect(() => {
-    fetchWithAuth(`${API}/cards/${id}/`)
+    if (!cardId) return;
+    fetchWithAuth(`${API}/cards/${cardId}/`)
       .then(res => {
-        if (!res.ok) throw new Error(res.statusText)
-        return res.json()
+        if (!res.ok) throw new Error(res.statusText);
+        return res.json();
       })
       .then(card => {
-        setFormData(card)
-        setInitialData(card)
+        setFormData(card);
+        setInitialData(card);
+        // Set document title to card problem or deck name if available
+        if (card.data && card.data.problem) {
+          document.title = card.data.problem;
+        } else if (location.state && location.state.deckName) {
+          document.title = location.state.deckName;
+        } else {
+          document.title = 'Card Detail';
+        }
+        // If the slug in the URL does not match, replace it with the correct one
+        const kebab = (card.data.problem || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        if (slug !== kebab) {
+          navigate(`/cards/${kebab}`, { replace: true, state: location.state });
+        }
       })
-      .catch(console.error)
-  }, [API, id])
+      .catch(console.error);
+  }, [API, cardId, slug, location.state, navigate]);
 
-  if (!formData) return <p>Loading…</p>
+  // --- Show error if cardId is not found ---
+  if (cardId === null) {
+    return (
+      <div className="p-8 text-center">
+        <div className="mb-4 text-2xl text-red-600 font-semibold">Card not found.</div>
+        <div className="mb-6 text-gray-500">The card you are looking for does not exist or could not be found in this deck.</div>
+        <button
+          className="rounded-md bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow transition hover:bg-indigo-700"
+          onClick={() => navigate(-1)}
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  if (!formData) return <p>Loading…</p>;
 
   // Shared handlers
   const handleChange = e => {
@@ -37,7 +101,7 @@ export default function CardDetail() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
   const handleSave = () => {
-    fetchWithAuth(`${API}/cards/${id}/`, {
+    fetchWithAuth(`${API}/cards/${cardId}/`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),
@@ -61,7 +125,6 @@ export default function CardDetail() {
   }
   const toggleFlip = () => {
     setIsFlipped(f => !f)
-    setShowHint(false)
   }
   // Tag change handler
   const handleTagsChange = tags => {
@@ -80,13 +143,18 @@ export default function CardDetail() {
       .catch(console.error);
   };
 
+  // Back button logic
+  // Try to use deckId/deckName from location.state, else fallback
+  const backToDeck = location.state && location.state.deckId && location.state.deckName
+    ? { to: `/decks/${(location.state.deckName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`, state: { id: location.state.deckId } }
+    : { to: '/', state: undefined };
+
   return (
     <div className="">
-      <Link to={'/'}>
+      <Link {...backToDeck}>
         <button>Back</button>
       </Link>
       <div className="card-detail container">
-        <h1>{formData.data.problem}</h1>
         {/* TAGS: show in both modes */}
         <div className="mb-4">
           <strong>Tags:</strong>{' '}
@@ -119,159 +187,104 @@ export default function CardDetail() {
         )}
 
         {isEditing ? (
-            // EDIT MODE: show all fields as inputs
-            <>
-            <label>
-                Difficulty
-                <input
-                type="text"
-                name="difficulty"
-                value={formData.data.difficulty}
-                onChange={handleChange}
-                />
-            </label>
-
-            <label>
-                Category
-                <input
-                type="text"
-                name="category"
-                value={formData.data.category}
-                onChange={handleChange}
-                />
-            </label>
-
-            <label>
-                Hint
-                <input
-                type="text"
-                name="hint"
-                value={formData.data.hint}
-                onChange={handleChange}
-                />
-            </label>
-
-            <label>
-                Pseudocode
-                <textarea
-                name="pseudo"
-                value={formData.data.pseudo}
-                onChange={handleChange}
-                />
-            </label>
-
-            <label>
-                Solution
-                <Editor
-                height="300px"
-                defaultLanguage="javascript"
-                value={formData.data.solution}
-                onChange={(value) =>
-                    setFormData(prev => ({ ...prev, solution: value }))
-                }
-                options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    wordWrap: 'on',
-                }}
-                onMount={(editor) => (editorRef.current = editor)}
-                />
-            </label>
-
-            <label>
-                Complexity
-                <input
-                type="text"
-                name="complexity"
-                value={formData.data.complexity}
-                onChange={handleChange}
-                />
-            </label>
-            </>
+          // EDIT MODE: show all fields as inputs
+          <>
+            {frontFields.concat(backFields.filter(f => !frontFields.includes(f))).map(field => (
+              <label key={field}>
+                {field.charAt(0).toUpperCase() + field.slice(1)}
+                {field === 'solution' ? (
+                  <Editor
+                    height="300px"
+                    defaultLanguage="python"
+                    value={formData.data[field] || ''}
+                    onChange={val => setFormData(prev => ({ ...prev, data: { ...prev.data, [field]: val ?? '' } }))}
+                    options={{ minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
+                  />
+                ) : field === 'pseudo' ? (
+                  <textarea
+                    name={field}
+                    value={formData.data[field] || ''}
+                    onChange={handleChange}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    name={field}
+                    value={formData.data[field] || ''}
+                    onChange={handleChange}
+                  />
+                )}
+              </label>
+            ))}
+          </>
         ) : (
-            // VIEW MODE: front or back
-            <>
+          // VIEW MODE: front or back
+          <>
             {!isFlipped ? (
-                // FRONT SIDE
-                <>
-                <h2>Difficulty</h2>
-                <p>
-                    <span className={`difficulty-text ${formData.data.difficulty.toLowerCase()}`}>
-                    {formData.data.difficulty}
-                    </span>
-                </p>
-
-                <div className="hint-section">
-                    <button onClick={() => setShowHint(h => !h)}>
-                    {showHint ? 'Hide Hint' : 'Show Hint'}
-                    </button>
-                    {showHint && (
-                    <>
-                        <h3>Hint</h3>
-                        <p>{formData.data.hint}</p>
-                    </>
+              // FRONT SIDE
+              <>
+                {frontFields.map(field => (
+                  <div key={field} className="mb-2">
+                    <span className="font-semibold capitalize text-gray-800">{field}:</span>{' '}
+                    {field === 'difficulty' ? (
+                      <span className={`difficulty-text ${(formData.data[field] || '').toLowerCase()}`}>{formData.data[field]}</span>
+                    ) : (
+                      <span>{formData.data[field]}</span>
                     )}
-                </div>
-                </>
+                  </div>
+                ))}
+              </>
             ) : (
-                // BACK SIDE
-                <>
-                <h2>Pseudocode</h2>
-                <Editor
-                    height="300px"
-                    defaultLanguage="python"
-                    value={formData.data.pseudo}
-                    options={{
-                    readOnly: true,
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    wordWrap: 'on',
-                    }}
-                />
-                <h2>Solution</h2>
-                <div className="solution-editor">
-                <Editor
-                    height="300px"
-                    defaultLanguage="python"
-                    value={formData.data.solution}
-                    options={{
-                    readOnly: true,
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    wordWrap: 'on',
-                    }}
-                />
-                </div>
-
-                <h2>Complexity</h2>
-                <p>{formData.data.complexity}</p>
-                </>
+              // BACK SIDE
+              <>
+                {backFields.length > 0 ? backFields.map(field => (
+                  <div key={field} className="mb-2">
+                    <span className="font-semibold capitalize text-gray-800">{field}:</span>{' '}
+                    {field === 'solution' ? (
+                      <Editor
+                        height="300px"
+                        defaultLanguage="python"
+                        value={formData.data[field] || ''}
+                        options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
+                      />
+                    ) : field === 'pseudo' ? (
+                      <Editor
+                        height="300px"
+                        defaultLanguage="python"
+                        value={formData.data[field] || ''}
+                        options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
+                      />
+                    ) : (
+                      <span>{formData.data[field]}</span>
+                    )}
+                  </div>
+                )) : <div className="text-gray-400 italic">No back fields defined.</div>}
+              </>
             )}
-            </>
+          </>
         )}
 
         <div className="button-row">
-            {isEditing ? (
+          {isEditing ? (
             // EDIT MODE BUTTONS
             <>
-                <button onClick={handleSave} className="save-btn">Save</button>
-                <button onClick={handleReset} className="reset-btn">Reset</button>
-                <button onClick={handleCancel} className="cancel-btn">Cancel</button>
+              <button onClick={handleSave} className="save-btn">Save</button>
+              <button onClick={handleReset} className="reset-btn">Reset</button>
+              <button onClick={handleCancel} className="cancel-btn">Cancel</button>
             </>
-            ) : (
+          ) : (
             // VIEW MODE BUTTONS
             <>
-                <button onClick={toggleFlip} className="flip-btn">
-                    Flip
-                </button>
-                <button onClick={() => setIsEditing(true)} className="edit-btn">
+              <button onClick={toggleFlip} className="flip-btn">
+                Flip
+              </button>
+              <button onClick={() => setIsEditing(true)} className="edit-btn">
                 Edit
-                </button>
+              </button>
             </>
-            )}
-            
+          )}
         </div>
-        </div>
+      </div>
     </div>
-  )
+  );
 }

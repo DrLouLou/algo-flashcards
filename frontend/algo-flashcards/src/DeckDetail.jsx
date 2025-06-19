@@ -1,6 +1,6 @@
 // src/DeckDetail.jsx
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import fetchWithAuth from './api';
 import CardContainer from './CardContainer';
 import TagEditor from './TagEditor';
@@ -8,20 +8,46 @@ import { HiPlus } from 'react-icons/hi';
 import CreateCard from './CreateCard';
 
 export default function DeckDetail({ decks, reloadDecks }) {
-  const { id } = useParams();
+  const { slug } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [cards, setCards] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
-  const [selectedDifficulties, setSelectedDifficulties] = useState([]); // NEW
+  const [selectedDifficulties, setSelectedDifficulties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddCard, setShowAddCard] = useState(false);
 
-  // Find deck info
-  const deck = useMemo(() => decks?.find(d => String(d.id) === String(id)), [decks, id]);
+  // Find deck id: prefer location.state, else look up by slug
+  const deck = useMemo(() => {
+    if (!decks) return null;
+    if (location.state && location.state.id) {
+      return decks.find(d => String(d.id) === String(location.state.id));
+    }
+    // fallback: look up by slug
+    const match = decks.find(d => {
+      const kebab = d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      return kebab === slug;
+    });
+    return match || null;
+  }, [decks, location.state, slug]);
+
+  const id = deck ? deck.id : null;
+
+  useEffect(() => {
+    if (deck && deck.name) {
+      document.title = deck.name;
+      // If the slug in the URL does not match, replace it with the correct one
+      const kebab = deck.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      if (slug !== kebab) {
+        navigate(`/decks/${kebab}`, { replace: true, state: { id: deck.id } });
+      }
+    }
+  }, [deck, slug, navigate]);
 
   // Fetch cards for this deck
   useEffect(() => {
+    if (!id) return;
     setLoading(true);
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cards/?deck=${id}`)
       .then(r => r.json())
@@ -59,6 +85,16 @@ export default function DeckDetail({ decks, reloadDecks }) {
         : [...diffs, diff]
     );
   }
+
+  // When rendering CardContainer, ensure every card has a deck object
+  const visibleCardsWithDeck = useMemo(() =>
+    visibleCards.map(card =>
+      card.deck && typeof card.deck === 'object'
+        ? { ...card, _allCardsForDeck: visibleCards }
+        : { ...card, deck, _allCardsForDeck: visibleCards }
+    ),
+    [visibleCards, deck]
+  );
 
   if (loading) return <div className="p-8">Loading…</div>;
   if (error) return <div className="p-8 text-red-600">{error}</div>;
@@ -107,7 +143,7 @@ export default function DeckDetail({ decks, reloadDecks }) {
                 fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cards/?deck=${id}`)
                   .then(r => r.json())
                   .then(d => setCards(d.results || []));
-                if (reloadDecks) reloadDecks(); // <-- update global deck list
+                if (reloadDecks) reloadDecks();
               }}
               defaultDeckId={deck.id}
             />
@@ -153,7 +189,7 @@ export default function DeckDetail({ decks, reloadDecks }) {
       </div>
 
       {/* Card list */}
-      <CardContainer cardData={visibleCards} />
+      <CardContainer cardData={visibleCardsWithDeck} />
 
       {/* Back to decks */}
       <div className="mt-8">
@@ -168,3 +204,4 @@ export default function DeckDetail({ decks, reloadDecks }) {
 // Note: The reloadDecks prop was previously used to refresh the parent deck list after card/deck changes.
 // In the new workflow, DeckDetail only manages cards for a single deck, and deck list changes (create/delete/rename)
 // are handled in the main deck grid and ManageDecks. DeckDetail only needs to update its own card list, not the global decks.
+// When linking to DeckDetail elsewhere (e.g., in deck grid), use `/decks/${d.id}/${kebab}`

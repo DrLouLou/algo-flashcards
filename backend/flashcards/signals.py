@@ -21,7 +21,7 @@ def bootstrap_user(sender, instance, created, **kwargs):
     )
     # 2) Create an empty personal deck for the new user with a valid card_type
     Deck.objects.create(
-        name=f"{instance.username}'s Deck", owner=instance, card_type=card_type
+        name=f"{instance.username}'s Deck", owner=instance, card_type=card_type, tags=""
     )
 
     # 3) Find (or create) the global Starter Deck
@@ -31,6 +31,7 @@ def bootstrap_user(sender, instance, created, **kwargs):
             "description": "All pre-loaded Anki cards",
             "owner": None,
             "card_type": card_type,
+            "tags": "",
         },
     )
 

@@ -14,21 +14,30 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
 from rest_framework import routers
-from flashcards.views import DeckViewSet, CardViewSet, RegisterView, UserCardViewSet, CardGenerationAPIView, MeView
+from flashcards.views import (
+    DeckViewSet,
+    CardViewSet,
+    RegisterView,
+    UserCardViewSet,
+    CardGenerationAPIView,
+    MeView,
+    CardTypeViewSet,
+)
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
 
 router = routers.DefaultRouter()
-router.register(r'decks', DeckViewSet)
-router.register(r'cards', CardViewSet)
-router.register(r'usercards', UserCardViewSet, basename='usercard')
-
+router.register(r"decks", DeckViewSet)
+router.register(r"cards", CardViewSet)
+router.register(r"usercards", UserCardViewSet, basename="usercard")
+router.register(r"cardtypes", CardTypeViewSet, basename="cardtype")
 
 
 def home(request):
@@ -36,15 +45,15 @@ def home(request):
 
 
 urlpatterns = [
-    path('', home),  
+    path("", home),
     # JWT auth
-    path('api/register/', RegisterView.as_view(), name='register'),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('admin/', admin.site.urls),
-    path('api/', include(router.urls)),
+    path("api/register/", RegisterView.as_view(), name="register"),
+    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("admin/", admin.site.urls),
+    path("api/", include(router.urls)),
     path("api/generate_card/", CardGenerationAPIView.as_view(), name="generate-card"),
-    path('api/me/', MeView.as_view(), name='me'),
+    path("api/me/", MeView.as_view(), name="me"),
 ]
 
 from django.urls import path, include

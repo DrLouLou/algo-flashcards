@@ -16,10 +16,42 @@ class CardType(models.Model):
         default=list,
         help_text="List of JSON keys that each Card.data must include",
     )
+    layout = models.JSONField(
+        blank=True,
+        default=dict,
+        help_text="Dict with 'front' and 'back' keys listing field names for card layout",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("name", "owner")
+        # Prevent duplicate card types per user (or globally if owner is null)
 
     def __str__(self):
         return self.name
+
+    @staticmethod
+    def get_or_create_default(owner):
+        return CardType.objects.get_or_create(
+            name="Default",
+            owner=owner,
+            defaults={
+                "fields": [
+                    "problem",
+                    "difficulty",
+                    "category",
+                    "hint",
+                    "pseudo",
+                    "solution",
+                    "complexity",
+                    "tags",
+                ],
+                "layout": {
+                    "front": ["problem", "difficulty", "category", "hint"],
+                    "back": ["pseudo", "solution", "complexity"],
+                },
+            },
+        )
 
 
 class Deck(models.Model):
@@ -45,8 +77,8 @@ class Deck(models.Model):
     tags = models.CharField(max_length=200, blank=True, default="")
 
     class Meta:
-        unique_together = ("card_type", "name")
-        # prevent two decks with the same name under one type
+        unique_together = ("card_type", "name", "owner")
+        # prevent two decks with the same name under one type and owner
 
     def save(self, *args, **kwargs):
         if self.tags:
@@ -63,16 +95,17 @@ class Deck(models.Model):
 
 class Card(models.Model):
     deck = models.ForeignKey(Deck, on_delete=models.CASCADE, related_name="cards")
-    card_type = models.ForeignKey(
-        CardType, on_delete=models.PROTECT, related_name="cards", null=True, blank=True
-    )
     data = models.JSONField(
         blank=True,
         default=dict,
-        help_text="A dict whose keys must come from card_type.fields",
+        help_text="A dict whose keys must come from the deck's card_type.fields",
     )
-    problem = models.CharField(max_length=100, blank=False)
-    difficulty = models.CharField(max_length=50, blank=False)
+    problem = models.CharField(
+        max_length=100, blank=True
+    )  # changed blank=False to blank=True
+    difficulty = models.CharField(
+        max_length=50, blank=True
+    )  # changed blank=False to blank=True
     category = models.CharField(max_length=100, blank=True, default="")
     hint = models.CharField(blank=True, default="")
     pseudo = models.TextField(blank=True, default="")
@@ -91,8 +124,8 @@ class Card(models.Model):
         super().save(*args, **kwargs)
 
     def clean(self):
-        # enforce that data only contains the fields declared in CardType
-        allowed = set(self.card_type.fields or [])
+        # enforce that data only contains the fields declared in the deck's CardType
+        allowed = set(self.deck.card_type.fields or [])
         given = set(self.data.keys())
         bad = given - allowed
         if bad:
