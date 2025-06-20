@@ -53,7 +53,7 @@ export default function ManageDecks({
 
       {/* deck grid */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {decks.map(d => (
+        {(Array.isArray(decks) ? decks : []).map(d => (
           <div
             key={d.id}
             className="group relative rounded-lg border border-gray-200 bg-white p-5 shadow-sm

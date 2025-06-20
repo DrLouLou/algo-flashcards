@@ -16,7 +16,7 @@ export default function DeckDropdown({ decks, selectedDeckId, onChange }) {
         "
       >
         <option value="">All Decks</option>
-        {decks.map(d => (
+        {(Array.isArray(decks) ? decks : []).map(d => (
           <option key={d.id} value={d.id}>
             {d.name}
           </option>

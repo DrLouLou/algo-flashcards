@@ -23,7 +23,7 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
   const [saving, setSaving] = useState(false);
 
   // Find the selected deck object
-  const selectedDeck = useMemo(() => decks.find(d => String(d.id) === String(form.deck)), [form.deck, decks]);
+  const selectedDeck = useMemo(() => (Array.isArray(decks) ? decks.find(d => String(d.id) === String(form.deck)) : null), [form.deck, decks]);
   // Get the card type fields for the selected deck, always as array
   const cardTypeFields = useMemo(() => {
     if (selectedDeck && selectedDeck.card_type && Array.isArray(selectedDeck.card_type.fields)) {
@@ -158,7 +158,7 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
       )}
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Only show deck select if NOT in DeckDetail (no defaultDeckId) and more than one deck */}
-        {(!defaultDeckId && decks.length > 1) && (
+        {(!defaultDeckId && Array.isArray(decks) && decks.length > 1) && (
           <div className="col-span-full mb-4">
             <label className="mb-1 text-sm font-medium text-gray-700">Deck</label>
             <select
@@ -168,9 +168,9 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
               required
               className="rounded-md border border-gray-300 py-2 px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             >
-              {decks.map(d => (
+              {Array.isArray(decks) ? decks.map(d => (
                 <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
+              )) : null}
             </select>
           </div>
         )}

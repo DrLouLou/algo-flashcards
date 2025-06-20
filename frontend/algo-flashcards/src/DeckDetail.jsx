@@ -8,10 +8,20 @@ import { HiPlus } from 'react-icons/hi';
 import CreateCard from './CreateCard';
 
 export default function DeckDetail({ decks, reloadDecks }) {
+  // Always resolve decksArr as the array of decks, memoized
+  const decksArr = useMemo(() => (
+    Array.isArray(decks)
+      ? decks
+      : (decks && Array.isArray(decks.results) ? decks.results : [])
+  ), [decks]);
+
   const { slug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const [cards, setCards] = useState([]);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [prevCursors, setPrevCursors] = useState([]); // stack for going back
+  const [cursor, setCursor] = useState(null); // current cursor param
   const [selectedTags, setSelectedTags] = useState([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,17 +30,17 @@ export default function DeckDetail({ decks, reloadDecks }) {
 
   // Find deck id: prefer location.state, else look up by slug
   const deck = useMemo(() => {
-    if (!decks) return null;
+    if (!decksArr || decksArr.length === 0) return null;
     if (location.state && location.state.id) {
-      return decks.find(d => String(d.id) === String(location.state.id));
+      return decksArr.find(d => String(d.id) === String(location.state.id));
     }
     // fallback: look up by slug
-    const match = decks.find(d => {
+    const match = decksArr.find(d => {
       const kebab = d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
       return kebab === slug;
     });
     return match || null;
-  }, [decks, location.state, slug]);
+  }, [decksArr, location.state, slug]);
 
   const id = deck ? deck.id : null;
 
@@ -45,16 +55,54 @@ export default function DeckDetail({ decks, reloadDecks }) {
     }
   }, [deck, slug, navigate]);
 
-  // Fetch cards for this deck
+  // Defensive: show loading if decks are not loaded yet
+  const decksLoading = !decksArr || decksArr.length === 0;
+  const deckNotFound = !decksLoading && !deck;
+
+  // Fetch cards for this deck with cursor pagination and filters
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cards/?deck=${id}`)
+    let url = `${import.meta.env.VITE_API_BASE_URL}/cards/?deck=${id}`;
+    let params = [];
+    if (cursor) params.push(`cursor=${encodeURIComponent(cursor)}`);
+    if (selectedTags.length > 0) params.push(`tags=${encodeURIComponent(selectedTags.join(','))}`);
+    if (selectedDifficulties.length > 0) params.push(`difficulties=${encodeURIComponent(selectedDifficulties.join(','))}`);
+    if (params.length > 0) url += (url.includes('?') ? '&' : '?') + params.join('&');
+    console.log('Fetching cards:', url);
+    // Add a timeout to the fetch
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10s
+    fetchWithAuth(url, { signal: controller.signal })
       .then(r => r.json())
-      .then(d => setCards(d.results || []))
-      .catch(() => setError('Could not load cards'))
-      .finally(() => setLoading(false));
-  }, [id]);
+      .then(d => {
+        console.log('Cards response:', d);
+        // Always expect paginated object from backend
+        setCards(Array.isArray(d.results) ? d.results : []);
+        setNextCursor(d.next ? new URL(d.next).searchParams.get('cursor') : null);
+      })
+      .catch((e) => {
+        if (e.name === 'AbortError') {
+          setError('Request timed out.');
+        } else {
+          setError('Could not load cards');
+        }
+      })
+      .finally(() => {
+        clearTimeout(timeout);
+        setLoading(false);
+      });
+    return () => clearTimeout(timeout);
+  }, [id, cursor, selectedTags, selectedDifficulties]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCursor(null);
+    setPrevCursors([]);
+  }, [selectedTags, selectedDifficulties, id]);
 
   // All tags in this deck
   const allTags = useMemo(() => Array.from(new Set(cards.flatMap(c => (c.tags || '').split(',').map(t => t.trim()).filter(Boolean)))), [cards]);
@@ -65,18 +113,6 @@ export default function DeckDetail({ decks, reloadDecks }) {
     [cards]
   );
 
-  // Filtered cards (by tag and difficulty)
-  const visibleCards = useMemo(() => {
-    let filtered = cards;
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter(c => selectedTags.every(tag => (c.tags || '').split(',').includes(tag)));
-    }
-    if (selectedDifficulties.length > 0) {
-      filtered = filtered.filter(c => selectedDifficulties.includes((c.difficulty || c.data?.difficulty || '').charAt(0).toUpperCase() + (c.difficulty || c.data?.difficulty || '').slice(1).toLowerCase()));
-    }
-    return filtered;
-  }, [cards, selectedTags, selectedDifficulties]);
-
   // Toggle difficulty selection
   function toggleDifficulty(diff) {
     setSelectedDifficulties(diffs =>
@@ -86,16 +122,24 @@ export default function DeckDetail({ decks, reloadDecks }) {
     );
   }
 
-  // When rendering CardContainer, ensure every card has a deck object
-  const visibleCardsWithDeck = useMemo(() =>
-    visibleCards.map(card =>
-      card.deck && typeof card.deck === 'object'
-        ? { ...card, _allCardsForDeck: visibleCards }
-        : { ...card, deck, _allCardsForDeck: visibleCards }
-    ),
-    [visibleCards, deck]
-  );
+  // Pagination handlers
+  const handleNext = () => {
+    if (nextCursor) {
+      setPrevCursors(prev => [...prev, cursor]);
+      setCursor(nextCursor);
+    }
+  };
+  const handlePrev = () => {
+    if (prevCursors.length > 0) {
+      const prev = [...prevCursors];
+      const last = prev.pop();
+      setPrevCursors(prev);
+      setCursor(last);
+    }
+  };
 
+  if (decksLoading) return <div className="p-8">Loading decks...</div>;
+  if (deckNotFound) return <div className="p-8">Deck not found.</div>;
   if (loading) return <div className="p-8">Loading…</div>;
   if (error) return <div className="p-8 text-red-600">{error}</div>;
   if (!deck) return <div className="p-8">Deck not found.</div>;
@@ -104,7 +148,12 @@ export default function DeckDetail({ decks, reloadDecks }) {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-8 flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h2 className="text-3xl font-semibold tracking-tight mb-1">{deck.name}</h2>
+          <h2 className="text-3xl font-semibold tracking-tight mb-1 flex items-center gap-4">
+            {deck.name}
+            <Link to="/">
+              <button className="ml-4 rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Back to Decks</button>
+            </Link>
+          </h2>
           <p className="text-gray-600 text-sm mb-2">{deck.description}</p>
         </div>
         <div className="flex gap-2">
@@ -136,7 +185,7 @@ export default function DeckDetail({ decks, reloadDecks }) {
               ×
             </button>
             <CreateCard
-              decks={decks}
+              decks={decksArr}
               reloadCards={() => {
                 setShowAddCard(false);
                 // re-fetch cards for this deck
@@ -189,13 +238,24 @@ export default function DeckDetail({ decks, reloadDecks }) {
       </div>
 
       {/* Card list */}
-      <CardContainer cardData={visibleCardsWithDeck} />
+      <CardContainer cardData={cards} />
 
-      {/* Back to decks */}
-      <div className="mt-8">
-        <Link to="/">
-          <button className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Back to Decks</button>
-        </Link>
+      {/* Cursor Pagination controls */}
+      <div className="flex justify-center gap-4 mt-6">
+        <button
+          className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+          onClick={handlePrev}
+          disabled={prevCursors.length === 0}
+        >
+          « Prev
+        </button>
+        <button
+          className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+          onClick={handleNext}
+          disabled={!nextCursor}
+        >
+          Next »
+        </button>
       </div>
     </div>
   );

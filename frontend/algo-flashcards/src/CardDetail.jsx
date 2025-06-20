@@ -16,11 +16,41 @@ export default function CardDetail({ decks }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const API = import.meta.env.VITE_API_BASE_URL;
 
-  // Always use formData.deck as object if present
-  const deckObj = formData && formData.deck && typeof formData.deck === 'object' ? formData.deck :
-    (formData && formData.deck ? (decks ? decks.find(d => String(d.id) === String(formData.deck)) : null) : null);
-  const cardType = deckObj?.card_type || (formData && formData.card_type) || {};
+  // Robustly resolve cardType for all cases (custom and default)
+  // Defensive: always use Array.isArray(decks) for .find
+  let deckObj = null;
+  let cardType = {};
+  if (formData) {
+    if (formData.deck && typeof formData.deck === 'object') {
+      deckObj = formData.deck;
+      cardType = deckObj.card_type || formData.card_type || {};
+    } else if (formData.card_type && typeof formData.card_type === 'object') {
+      cardType = formData.card_type;
+    } else if (formData.deck && Array.isArray(decks)) {
+      deckObj = decks.find(d => String(d.id) === String(formData.deck));
+      cardType = deckObj?.card_type || {};
+    }
+    // Defensive: if cardType is still missing fields, try to infer from formData.data
+    if (!Array.isArray(cardType.fields) && formData.data) {
+      cardType.fields = Object.keys(formData.data);
+    }
+  }
   const { front: frontFields, back: backFields } = getCardLayout(cardType, formData?.data);
+
+  // Get hidden fields from cardType.layout.hidden (array of field names)
+  const hiddenFields = Array.isArray(cardType?.layout?.hidden) ? cardType.layout.hidden : [];
+
+  // Get hidden fields for front and back, preserving order
+  const hiddenFrontFields = Array.isArray(cardType?.layout?.front)
+    ? cardType.layout.front.filter(f => hiddenFields.includes(f))
+    : [];
+  const hiddenBackFields = Array.isArray(cardType?.layout?.back)
+    ? cardType.layout.back.filter(f => hiddenFields.includes(f))
+    : [];
+
+  // Filter out hidden fields from front/back for main display
+  const visibleFrontFields = frontFields.filter(f => !hiddenFields.includes(f));
+  const visibleBackFields = backFields.filter(f => !hiddenFields.includes(f));
 
   // Try to get cards from navigation state (DeckDetail passes them), else fallback to decks
   const cardsFromState = location.state && location.state.cards;
@@ -70,7 +100,8 @@ export default function CardDetail({ decks }) {
         }
         // If the slug in the URL does not match, replace it with the correct one
         const kebab = (card.data.problem || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-        if (slug !== kebab) {
+        // Only navigate if both are non-empty and different
+        if (kebab && slug && slug !== kebab) {
           navigate(`/cards/${kebab}`, { replace: true, state: location.state });
         }
       })
@@ -150,33 +181,36 @@ export default function CardDetail({ decks }) {
     : { to: '/', state: undefined };
 
   return (
-    <div className="">
-      <Link {...backToDeck}>
-        <button>Back</button>
-      </Link>
-      <div className="card-detail container">
-        {/* TAGS: show in both modes */}
-        <div className="mb-4">
-          <strong>Tags:</strong>{' '}
-          {isEditing ? (
-            <TagEditor
-              tags={formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
-              onChange={tagsArr => handleTagsChange(tagsArr)}
-            />
-          ) : (
-            (formData.tags || '').split(',').filter(Boolean).map(tag => (
-              <span key={tag} className="tag">{tag}</span>
-            ))
-          )}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 relative">
+      {/* Back button */}
+      <div className="absolute top-6 left-6 z-10">
+        <Link {...backToDeck} className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-semibold text-base transition"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' /></svg>Back</Link>
+      </div>
+      <div className="max-w-2xl w-full mx-auto bg-white/90 rounded-3xl shadow-2xl p-8 space-y-8 border border-gray-100 backdrop-blur-md">
+        {/* TAGS */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight flex items-center gap-2"><svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6 text-blue-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M7 7h.01M7 11h.01M7 15h.01M11 7h2M11 11h2M11 15h2M15 7h.01M15 11h.01M15 15h.01' /></svg>Tags</h2>
+          <div className="flex flex-wrap gap-2">
+            {isEditing ? (
+              <TagEditor
+                tags={formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
+                onChange={tagsArr => handleTagsChange(tagsArr)}
+              />
+            ) : (
+              (formData.tags || '').split(',').filter(Boolean).map(tag => (
+                <span key={tag} className="border-l-4 border-blue-400 pl-3 bg-blue-100 text-sm text-blue-700 rounded-full py-0.5 px-3 font-medium shadow-sm">{tag}</span>
+              ))
+            )}
+          </div>
         </div>
         {/* Status controls if available */}
         {formData.status && (
-          <div className="mb-4 flex gap-2">
-            <strong>Status:</strong>
+          <div className="flex gap-2 items-center">
+            <span className="font-semibold text-gray-700">Status:</span>
             {['new','review','known'].map(s => (
               <button
                 key={s}
-                className={`px-3 py-1 rounded-full border text-xs ${formData.status === s ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+                className={`px-3 py-1 rounded-full border text-xs font-semibold transition ${formData.status === s ? 'bg-indigo-500 text-white shadow' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                 onClick={() => updateStatus(s)}
                 disabled={formData.status === s}
               >
@@ -185,105 +219,162 @@ export default function CardDetail({ decks }) {
             ))}
           </div>
         )}
-
-        {isEditing ? (
-          // EDIT MODE: show all fields as inputs
-          <>
-            {frontFields.concat(backFields.filter(f => !frontFields.includes(f))).map(field => (
-              <label key={field}>
-                {field.charAt(0).toUpperCase() + field.slice(1)}
-                {field === 'solution' ? (
-                  <Editor
-                    height="300px"
-                    defaultLanguage="python"
-                    value={formData.data[field] || ''}
-                    onChange={val => setFormData(prev => ({ ...prev, data: { ...prev.data, [field]: val ?? '' } }))}
-                    options={{ minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
-                  />
-                ) : field === 'pseudo' ? (
-                  <textarea
-                    name={field}
-                    value={formData.data[field] || ''}
-                    onChange={handleChange}
-                  />
-                ) : (
+        {/* Card fields */}
+        <div className="space-y-5">
+          {isEditing ? (
+            // EDIT MODE: show all fields as inputs
+            <>
+              {visibleFrontFields.concat(visibleBackFields.filter(f => !visibleFrontFields.includes(f))).map(field => (
+                <label key={field} className="block">
+                  <span className="block font-semibold text-gray-700 mb-1 tracking-wide">{field.charAt(0).toUpperCase() + field.slice(1)}</span>
+                  {field === 'solution' ? (
+                    <Editor
+                      height="180px"
+                      defaultLanguage="python"
+                      value={formData.data[field] || ''}
+                      onChange={val => setFormData(prev => ({ ...prev, data: { ...prev.data, [field]: val ?? '' } }))}
+                      options={{ minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
+                    />
+                  ) : field === 'pseudo' ? (
+                    <textarea
+                      name={field}
+                      value={formData.data[field] || ''}
+                      onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      name={field}
+                      value={formData.data[field] || ''}
+                      onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                    />
+                  )}
+                </label>
+              ))}
+              {/* Show hidden fields in edit mode as well */}
+              {hiddenFields.length > 0 && hiddenFields.map(field => (
+                <label key={field} className="block">
+                  <span className="block font-semibold text-gray-700 mb-1 tracking-wide">{field.charAt(0).toUpperCase() + field.slice(1)}</span>
                   <input
                     type="text"
                     name={field}
                     value={formData.data[field] || ''}
                     onChange={handleChange}
+                    className="w-full rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
                   />
-                )}
-              </label>
-            ))}
-          </>
-        ) : (
-          // VIEW MODE: front or back
-          <>
-            {!isFlipped ? (
-              // FRONT SIDE
-              <>
-                {frontFields.map(field => (
-                  <div key={field} className="mb-2">
-                    <span className="font-semibold capitalize text-gray-800">{field}:</span>{' '}
-                    {field === 'difficulty' ? (
-                      <span className={`difficulty-text ${(formData.data[field] || '').toLowerCase()}`}>{formData.data[field]}</span>
-                    ) : (
-                      <span>{formData.data[field]}</span>
-                    )}
-                  </div>
-                ))}
-              </>
-            ) : (
-              // BACK SIDE
-              <>
-                {backFields.length > 0 ? backFields.map(field => (
-                  <div key={field} className="mb-2">
-                    <span className="font-semibold capitalize text-gray-800">{field}:</span>{' '}
-                    {field === 'solution' ? (
-                      <Editor
-                        height="300px"
-                        defaultLanguage="python"
-                        value={formData.data[field] || ''}
-                        options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
-                      />
-                    ) : field === 'pseudo' ? (
-                      <Editor
-                        height="300px"
-                        defaultLanguage="python"
-                        value={formData.data[field] || ''}
-                        options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
-                      />
-                    ) : (
-                      <span>{formData.data[field]}</span>
-                    )}
-                  </div>
-                )) : <div className="text-gray-400 italic">No back fields defined.</div>}
-              </>
-            )}
-          </>
-        )}
-
-        <div className="button-row">
-          {isEditing ? (
-            // EDIT MODE BUTTONS
-            <>
-              <button onClick={handleSave} className="save-btn">Save</button>
-              <button onClick={handleReset} className="reset-btn">Reset</button>
-              <button onClick={handleCancel} className="cancel-btn">Cancel</button>
+                </label>
+              ))}
             </>
           ) : (
-            // VIEW MODE BUTTONS
+            // VIEW MODE: front or back
             <>
-              <button onClick={toggleFlip} className="flip-btn">
-                Flip
-              </button>
-              <button onClick={() => setIsEditing(true)} className="edit-btn">
-                Edit
-              </button>
+              {!isFlipped ? (
+                // FRONT SIDE
+                <>
+                  {visibleFrontFields.map(field => (
+                    <div key={field} className="flex items-center space-x-2 text-base text-gray-700 bg-blue-50 rounded-lg px-4 py-2 shadow-sm border-l-4 border-blue-300">
+                      <span className="font-semibold w-32 text-blue-900">{field}:</span>
+                      {field === 'difficulty' ? (
+                        <span className={`difficulty-text ${(formData.data[field] || '').toLowerCase()}`}>{formData.data[field]}</span>
+                      ) : (
+                        <span>{formData.data[field]}</span>
+                      )}
+                    </div>
+                  ))}
+                </>
+              ) : (
+                // BACK SIDE
+                <>
+                  {visibleBackFields.length > 0 ? visibleBackFields.map(field => (
+                    <div key={field} className="flex items-center space-x-2 text-base text-gray-700 bg-blue-50 rounded-lg px-4 py-2 shadow-sm border-l-4 border-blue-300">
+                      <span className="font-semibold w-32 text-blue-900">{field}:</span>
+                      {field === 'solution' ? (
+                        <Editor
+                          height="180px"
+                          defaultLanguage="python"
+                          value={formData.data[field] || ''}
+                          options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
+                        />
+                      ) : field === 'pseudo' ? (
+                        <Editor
+                          height="180px"
+                          defaultLanguage="python"
+                          value={formData.data[field] || ''}
+                          options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
+                        />
+                      ) : (
+                        <span>{formData.data[field]}</span>
+                      )}
+                    </div>
+                  )) : <div className="text-gray-400 italic">No back fields defined.</div>}
+                </>
+              )}
             </>
           )}
         </div>
+        {/* Hidden fields reveal buttons and display */}
+        {(hiddenFrontFields.length > 0 || hiddenBackFields.length > 0) && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Hidden fields on the front side */}
+            {!isFlipped && hiddenFrontFields.map(field => (
+              <HiddenFieldReveal
+                key={field}
+                field={field}
+                value={formData.data[field]}
+              />
+            ))}
+            {/* Hidden fields on the back side */}
+            {isFlipped && hiddenBackFields.map(field => (
+              <HiddenFieldReveal
+                key={field}
+                field={field}
+                value={formData.data[field]}
+              />
+            ))}
+          </div>
+        )}
+        {/* Action buttons */}
+        <div className="flex justify-between mt-8 gap-4">
+          {isEditing ? (
+            <>
+              <button onClick={handleSave} className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 shadow"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' /></svg><span>Save</span></button>
+              <button onClick={handleReset} className="px-5 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition flex items-center gap-2 shadow"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582M20 20v-5h-.581M5 19l14-14' /></svg><span>Reset</span></button>
+              <button onClick={handleCancel} className="px-5 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition flex items-center gap-2 shadow"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' /></svg><span>Cancel</span></button>
+            </>
+          ) : (
+            <>
+              <button onClick={toggleFlip} className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 shadow"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 12H5M12 5l-7 7 7 7' /></svg><span>Flip</span></button>
+              <button onClick={() => setIsEditing(true)} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15.232 5.232l3.536 3.536M9 11l6 6M3 21v-4.586a1 1 0 01.293-.707l12-12a1 1 0 011.414 0l4.586 4.586a1 1 0 010 1.414l-12 12a1 1 0 01-.707.293H3z' /></svg><span>Edit</span></button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HiddenFieldReveal({ field, value }) {
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl p-5 text-center transition-opacity duration-300 shadow-md border border-blue-200 flex flex-col items-center">
+      <div className="flex items-center justify-center gap-2 mb-2">
+        <span className="text-blue-700 font-semibold text-base tracking-wide">{field.charAt(0).toUpperCase() + field.slice(1)}</span>
+        <button
+          className={`ml-2 text-sm px-4 py-1 rounded-lg bg-blue-200 hover:bg-blue-300 text-blue-800 font-semibold transition shadow`}
+          onClick={() => setRevealed(v => !v)}
+          type="button"
+        >
+          {revealed ? 'Hide' : 'Reveal'}
+        </button>
+      </div>
+      <div className={`transition-opacity duration-300 ${revealed ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}> 
+        {revealed && (
+          <div className="w-full bg-white rounded p-3 border border-blue-300 text-blue-900 text-center break-words shadow-inner">
+            {value || <span className="italic text-blue-400">(No value)</span>}
+          </div>
+        )}
       </div>
     </div>
   );

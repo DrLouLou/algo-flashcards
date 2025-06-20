@@ -39,18 +39,40 @@ class DeckViewSet(viewsets.ModelViewSet):
     queryset = Deck.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     serializer_class = DeckSerializer
-    pagination_class = None
+    from rest_framework.pagination import CursorPagination
+
+    class DeckCursorPagination(CursorPagination):
+        page_size = 12
+        ordering = "id"
+        cursor_query_param = "cursor"
+
+    pagination_class = DeckCursorPagination
 
     def get_queryset(self):
         user = self.request.user
+        qs = Deck.objects.all()
         if user.is_authenticated:
-            qs = Deck.objects.filter(owner=user)
+            qs = qs.filter(owner=user)
             # If superuser, also include the Starter Deck (even if not owner)
             if user.is_superuser:
                 starter = Deck.objects.filter(name="Starter Deck")
                 qs = qs | starter
-            return qs.distinct()
-        return Deck.objects.none()
+        else:
+            qs = Deck.objects.none()
+        # Tag filtering (comma-separated, match any)
+        tags_param = self.request.query_params.get("tags")
+        if tags_param:
+            tags = [t.strip().lower() for t in tags_param.split(",") if t.strip()]
+            if tags:
+                tag_q = Q()
+                for tag in tags:
+                    tag_q |= Q(tags__icontains=tag)
+                qs = qs.filter(tag_q)
+        # Search by name (case-insensitive substring)
+        search_param = self.request.query_params.get("search")
+        if search_param:
+            qs = qs.filter(name__icontains=search_param)
+        return qs.distinct()
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -89,8 +111,8 @@ class DeckViewSet(viewsets.ModelViewSet):
 class CardViewSet(viewsets.ModelViewSet):
     queryset = Card.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly, IsDeckOwnerOrReadOnly]
-    pagination_class = CardCursorPagination
     serializer_class = CardSerializer
+    pagination_class = CardCursorPagination  # Enable cursor pagination for cards
 
     def get_queryset(self):
         user = self.request.user
@@ -105,6 +127,24 @@ class CardViewSet(viewsets.ModelViewSet):
             deck_id = self.request.query_params.get("deck")
             if deck_id:
                 qs = qs.filter(deck_id=deck_id)
+            # --- Filtering by tags (comma-separated, match any) ---
+            tags_param = self.request.query_params.get("tags")
+            if tags_param:
+                tags = [t.strip().lower() for t in tags_param.split(",") if t.strip()]
+                if tags:
+                    tag_q = Q()
+                    for tag in tags:
+                        tag_q |= Q(tags__icontains=tag)
+                    qs = qs.filter(tag_q)
+            # --- Filtering by difficulties (comma-separated, match any) ---
+            diffs_param = self.request.query_params.get("difficulties")
+            if diffs_param:
+                diffs = [d.strip() for d in diffs_param.split(",") if d.strip()]
+                if diffs:
+                    diff_q = Q()
+                    for diff in diffs:
+                        diff_q |= Q(difficulty__iexact=diff)
+                    qs = qs.filter(diff_q)
             return qs.distinct()
         return Card.objects.none()
 
@@ -389,4 +429,8 @@ class CardTypeViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if instance.owner != request.user:
             return Response({"detail": "Not found."}, status=404)
+        # Custom: delete all decks using this card type (cascade to cards)
+        decks = instance.decks.all()
+        for deck in decks:
+            deck.delete()
         return super().destroy(request, *args, **kwargs)

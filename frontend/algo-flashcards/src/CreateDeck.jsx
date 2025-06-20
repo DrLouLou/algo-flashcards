@@ -6,6 +6,17 @@ import './styles/CreateDeck.css'
 import TagEditor from './TagEditor'
 import { Info } from "lucide-react";
 
+// Helper to get showable card type IDs from localStorage (set by CardTypeManagement)
+function getShowableCardTypeIds() {
+  try {
+    const raw = localStorage.getItem('showableCardTypeIds');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 export default function CreateDeck({reloadDecks}) {
   const [form, setForm] = useState({ name: '', description: '', card_type: '', tags: '' })
   const [error, setError] = useState(null)
@@ -17,7 +28,15 @@ export default function CreateDeck({reloadDecks}) {
   useEffect(() => {
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cardtypes/`)
       .then(r => r.json())
-      .then(setCardTypes)
+      .then(data => {
+        // Filter by showable if set
+        const showableIds = getShowableCardTypeIds();
+        if (showableIds) {
+          setCardTypes(data.filter(ct => showableIds.includes(ct.id)));
+        } else {
+          setCardTypes(data);
+        }
+      })
       .catch(() => setCardTypes([]))
   }, [])
 

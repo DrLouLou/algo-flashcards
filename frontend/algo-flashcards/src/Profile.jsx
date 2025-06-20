@@ -4,18 +4,26 @@ import SettingsPanel from './SettingsPanel'
 
 export default function Profile() {
   const [user, setUser] = useState(null)
-  const [decks, setDecks] = useState([])
+  const [decks, setDecks] = useState({ results: [] })
   const [error, setError] = useState('')
 
-  useEffect(() => {
+  const loadUser = () => {
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/me/`)
       .then(res => res.json())
       .then(setUser)
       .catch(() => setError('Could not load user info'))
+  }
+
+  const loadDecks = () => {
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/decks/`)
       .then(res => res.json())
       .then(setDecks)
       .catch(() => setError('Could not load decks'))
+  }
+
+  useEffect(() => {
+    loadUser()
+    loadDecks()
   }, [])
 
   const toggleShare = async (deck) => {
@@ -26,7 +34,7 @@ export default function Profile() {
         body: JSON.stringify({ shared: !deck.shared })
       })
       if (!res.ok) throw new Error('Failed to update deck')
-      setDecks(decks => decks.map(d => d.id === deck.id ? { ...d, shared: !d.shared } : d))
+      loadDecks() // Reload decks from backend after update
     } catch {
       setError('Failed to update deck')
     }
@@ -42,7 +50,7 @@ export default function Profile() {
       <p><b>Email:</b> {user.email}</p>
       <h3>Your Decks</h3>
       <ul>
-        {decks.filter(d => d.owner === user.username).map(deck => (
+        {Array.isArray(decks.results) && decks.results.map(deck => (
           <li key={deck.id}>
             <b>{deck.name}</b> - Shared: {deck.shared ? 'Yes' : 'No'}
             <button style={{marginLeft:8}} onClick={() => toggleShare(deck)}>
