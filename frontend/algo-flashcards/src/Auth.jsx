@@ -35,8 +35,8 @@ export default function Auth({ onLogin }) {
   }
 
   const handleLogin = async e => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError('');
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/token/`,
@@ -48,14 +48,17 @@ export default function Auth({ onLogin }) {
             password: formData.password,
           }),
         }
-      )
-      if (!res.ok) throw new Error('Invalid credentials')
-      const data = await res.json()
-      localStorage.setItem('accessToken', data.access)
-      localStorage.setItem('refreshToken', data.refresh)
-      onLogin(data.access)
+      );
+      if (!res.ok) throw new Error('Invalid credentials');
+      const data = await res.json();
+      if (!data.access || !data.refresh) {
+        throw new Error('Login failed: missing tokens');
+      }
+      localStorage.setItem('accessToken', data.access);
+      localStorage.setItem('refreshToken', data.refresh);
+      onLogin(data.access); // update app state
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     }
   }
 
@@ -68,7 +71,7 @@ export default function Auth({ onLogin }) {
     }
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/register/`, // adjust if your endpoint differs
+        `${import.meta.env.VITE_API_BASE_URL}/register/`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

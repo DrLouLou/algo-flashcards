@@ -6,6 +6,7 @@ export default function NavBar({ onLogout }) {
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     onLogout(null);
     navigate('/login');
   };

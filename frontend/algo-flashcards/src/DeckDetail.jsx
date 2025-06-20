@@ -55,6 +55,16 @@ export default function DeckDetail({ decks, reloadDecks }) {
     }
   }, [deck, slug, navigate]);
 
+  // Defensive: check for token before fetching cards
+  React.useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token || typeof token !== 'string' || token.length < 10) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      window.location.href = '/login';
+    }
+  }, []);
+
   // Defensive: show loading if decks are not loaded yet
   const decksLoading = !decksArr || decksArr.length === 0;
   const deckNotFound = !decksLoading && !deck;

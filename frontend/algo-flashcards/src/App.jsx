@@ -74,8 +74,20 @@ function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, select
     ? Array.from(new Set(decks.flatMap(d => (d.tags || '').split(',').map(t => t.trim()).filter(Boolean))))
     : [];
 
+  // Defensive: If token is missing or invalid, force redirect to login
+  React.useEffect(() => {
+    if (!token || typeof token !== 'string' || token.length < 10) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      setToken(null);
+      setDecks([]);
+      navigate('/login', { replace: true });
+    }
+  }, [token, setToken, setDecks, navigate]);
+
   // Fetch paginated decks with filters/search
-  useEffect(() => {
+  React.useEffect(() => {
+    if (!token || typeof token !== 'string' || token.length < 10) return;
     setDeckLoading(true);
     let url = `${import.meta.env.VITE_API_BASE_URL}/decks/`;
     let params = [];
@@ -100,7 +112,7 @@ function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, select
         setDeckNextCursor(null);
       })
       .finally(() => setDeckLoading(false));
-  }, [deckCursor, selectedDeckTags, deckSearch, reloadDecks]);
+  }, [deckCursor, selectedDeckTags, deckSearch, reloadDecks, token]);
 
   // Reset pagination when filters/search change
   useEffect(() => {
@@ -124,37 +136,6 @@ function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, select
     }
   };
 
-  /* ---------- helpers ---------- */
-  // const goNext = () => {
-  //   if (!nextURL) return;
-  //   fetchWithAuth(nextURL)
-  //     .then(r => r.json())
-  //     .then(d => {
-  //       setCards(d.results);
-  //       setNextURL(d.next);
-  //       setPrevURL(d.previous);
-  //     })
-  //     .catch(console.error);
-  // };
-
-  // const goPrev = () => {
-  //   if (!prevURL) return;
-  //   fetchWithAuth(prevURL)
-  //     .then(r => r.json())
-  //     .then(d => {
-  //       setCards(d.results);
-  //       setNextURL(d.next);
-  //       setPrevURL(d.previous);
-  //     })
-  //     .catch(console.error);
-  // };
-
-  // Compute all unique tags from all decks
-  // const allDeckTags = Array.from(new Set(decks.flatMap(d => (d.tags || '').split(',').map(t => t.trim()).filter(Boolean))));
-  // Filter decks by selected tags
-  // const visibleDecks = selectedDeckTags.length === 0
-  //   ? decks
-  //   : decks.filter(d => selectedDeckTags.every(tag => (d.tags || '').split(',').includes(tag)));
 
   const handleDelete = async id => {
     if (!window.confirm('Delete this deck and all its cards?')) return;
@@ -508,15 +489,18 @@ export default function App() {
   const [busyId, setBusyId] = useState(null);
   const [selectedDeckTags, setSelectedDeckTags] = useState([]);
 
+  // Only fetch decks if token is present
   const reloadDecks = useCallback(() => {
     if (!token) return;
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/decks/`)
       .then(r => r.json())
       .then(setDecks)
       .catch(console.error);
-  }, [token])
+  }, [token]);
 
-  useEffect(reloadDecks, [reloadDecks]);
+  useEffect(() => {
+    if (token) reloadDecks();
+  }, [reloadDecks, token]);
 
 
   // Persist selectedDeckId in localStorage

@@ -3,6 +3,16 @@ import fetchWithAuth from './api'
 import SettingsPanel from './SettingsPanel'
 
 export default function Profile() {
+  // Defensive: check for token before fetching user or decks
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token || typeof token !== 'string' || token.length < 10) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      window.location.href = '/login';
+    }
+  }, []);
+
   const [user, setUser] = useState(null)
   const [decks, setDecks] = useState({ results: [] })
   const [error, setError] = useState('')
