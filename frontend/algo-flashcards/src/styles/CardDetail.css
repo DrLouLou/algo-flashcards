@@ -7,7 +7,6 @@
     height: auto;       /* so it can grow if the back side is taller */
     margin: 2rem auto;
     padding: 2rem;
-    background: #fff;
     border-radius: 0.5rem;
     box-shadow: 0 6px 16px rgba(0,0,0,0.12);
     overflow-y: auto;   /* allow scrolling if content exceeds viewport */
@@ -75,36 +74,46 @@
 }
   
 .save-btn {
-    background-color: #28a745;
-    color: #fff;
+    background-color: #4caf50;
+    color: white;
 }
-.save-btn:hover { background-color: #218838; }
+.save-btn:hover { 
+    background-color: #45a049; 
+}
 
 .reset-btn {
     background-color: #ffc107;
-    color: #212529;
+    color: #333;
 }
-.reset-btn:hover { background-color: #e0a800; }
+.reset-btn:hover { 
+    background-color: #e0a800; 
+}
 
 .cancel-btn {
-    background-color: #dc3545;
-    color: #fff;
+    background-color: #f44336;
+    color: white;
 }
-.cancel-btn:hover { background-color: #c82333; }
+.cancel-btn:hover { 
+    background-color: #e53935; 
+}
 
 .edit-btn {
     order: 1;
-    background-color: #007bff;
-    color: #fff;
+    background-color: #2196f3;
+    color: white;
 }
-.edit-btn:hover { background-color: #0069d9; }
+.edit-btn:hover { 
+    background-color: #1976d2; 
+}
 
 .back-btn {
     order: 1;
-    background-color: #6c757d;
-    color: #fff;
+    background-color: #607d8b;
+    color: white;
 }
-.back-btn:hover { background-color: #5a6268; }
+.back-btn:hover { 
+    background-color: #546e7a; 
+}
 
 .flip-btn {
     order: 3;
@@ -115,4 +124,3 @@
     border-radius: 0.25rem;
     overflow: hidden; 
   }
-  

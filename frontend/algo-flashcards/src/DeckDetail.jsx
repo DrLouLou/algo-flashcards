@@ -155,117 +155,119 @@ export default function DeckDetail({ decks, reloadDecks }) {
   if (!deck) return <div className="p-8">Deck not found.</div>;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-8 flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h2 className="text-3xl font-semibold tracking-tight mb-1 flex items-center gap-4">
-            {deck.name}
-            <Link to="/">
-              <button className="ml-4 rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Back to Decks</button>
-            </Link>
-          </h2>
-          <p className="text-gray-600 text-sm mb-2">{deck.description}</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowAddCard(true)}
-            className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
-          >
-            <HiPlus className="h-5 w-5" />
-            Add Card
-          </button>
-          <button
-            onClick={() => navigate(`/learn/${deck.id}`)}
-            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
-          >
-            Learn
-          </button>
-        </div>
-      </div>
-
-      {/* Add Card Modal/Inline */}
-      {showAddCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl w-full relative">
+    <div className="min-h-screen w-full bg-gray-50 flex justify-center items-start py-10 px-2">
+      <div className="w-full max-w-6xl bg-white rounded-2xl shadow-xl p-6">
+        <div className="mb-8 flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h2 className="text-3xl font-semibold tracking-tight mb-1 flex items-center gap-4">
+              {deck.name}
+              <Link to="/">
+                <button className="ml-4 rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Back to Decks</button>
+              </Link>
+            </h2>
+            <p className="text-gray-600 text-sm mb-2">{deck.description}</p>
+          </div>
+          <div className="flex gap-2">
             <button
-              onClick={() => setShowAddCard(false)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
-              aria-label="Close"
+              onClick={() => setShowAddCard(true)}
+              className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
             >
-              ×
+              <HiPlus className="h-5 w-5" />
+              Add Card
             </button>
-            <CreateCard
-              decks={decksArr}
-              reloadCards={() => {
-                setShowAddCard(false);
-                // re-fetch cards for this deck
-                fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cards/?deck=${id}`)
-                  .then(r => r.json())
-                  .then(d => setCards(d.results || []));
-                if (reloadDecks) reloadDecks();
-              }}
-              defaultDeckId={deck.id}
-            />
+            <button
+              onClick={() => navigate(`/learn/${deck.id}`)}
+              className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+            >
+              Learn
+            </button>
           </div>
         </div>
-      )}
 
-      {/* Difficulty filter */}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {['Easy', 'Medium', 'Hard'].map(diff => {
-          const active = selectedDifficulties.length === 0 || selectedDifficulties.includes(diff);
-          const COLOR = {
-            Easy:   '#28a745',
-            Medium: '#ffc107',
-            Hard:   '#dc3545',
-          }[diff];
-          return (
-            <button
-              key={diff}
-              onClick={() => toggleDifficulty(diff)}
-              className={`px-3 py-1 rounded-full text-sm border transition ${active ? 'text-white' : 'text-gray-700 hover:bg-gray-50'}`}
-              style={
-                active
-                  ? { backgroundColor: COLOR, borderColor: COLOR }
-                  : { borderColor: '#d1d5db' }
-              }
-            >
-              {diff}
-            </button>
-          );
-        })}
-      </div>
+        {/* Add Card Modal/Inline */}
+        {showAddCard && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl w-full relative">
+              <button
+                onClick={() => setShowAddCard(false)}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+                aria-label="Close"
+              >
+                ×
+              </button>
+              <CreateCard
+                decks={decksArr}
+                reloadCards={() => {
+                  setShowAddCard(false);
+                  // re-fetch cards for this deck
+                  fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cards/?deck=${id}`)
+                    .then(r => r.json())
+                    .then(d => setCards(d.results || []));
+                  if (reloadDecks) reloadDecks();
+                }}
+                defaultDeckId={deck.id}
+              />
+            </div>
+          </div>
+        )}
 
-      {/* Tag filter */}
-      <div className="mb-6">
-        <div className="font-medium mb-1">Filter by Tag</div>
-        <TagEditor
-          tags={selectedTags}
-          onChange={setSelectedTags}
-          allTags={allTags}
-          addButtonLabel="Search Tag"
-        />
-      </div>
+        {/* Difficulty filter */}
+        <div className="mb-4 flex flex-wrap gap-2">
+          {['Easy', 'Medium', 'Hard'].map(diff => {
+            const active = selectedDifficulties.length === 0 || selectedDifficulties.includes(diff);
+            const COLOR = {
+              Easy:   '#28a745',
+              Medium: '#ffc107',
+              Hard:   '#dc3545',
+            }[diff];
+            return (
+              <button
+                key={diff}
+                onClick={() => toggleDifficulty(diff)}
+                className={`px-3 py-1 rounded-full text-sm border transition ${active ? 'text-white' : 'text-gray-700 hover:bg-gray-50'}`}
+                style={
+                  active
+                    ? { backgroundColor: COLOR, borderColor: COLOR }
+                    : { borderColor: '#d1d5db' }
+                }
+              >
+                {diff}
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Card list */}
-      <CardContainer cardData={cards} />
+        {/* Tag filter */}
+        <div className="mb-6">
+          <div className="font-medium mb-1">Filter by Tag</div>
+          <TagEditor
+            tags={selectedTags}
+            onChange={setSelectedTags}
+            allTags={allTags}
+            addButtonLabel="Search Tag"
+          />
+        </div>
 
-      {/* Cursor Pagination controls */}
-      <div className="flex justify-center gap-4 mt-6">
-        <button
-          className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
-          onClick={handlePrev}
-          disabled={prevCursors.length === 0}
-        >
-          « Prev
-        </button>
-        <button
-          className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
-          onClick={handleNext}
-          disabled={!nextCursor}
-        >
-          Next »
-        </button>
+        {/* Card list */}
+        <CardContainer cardData={cards} />
+
+        {/* Cursor Pagination controls */}
+        <div className="flex justify-center gap-4 mt-6">
+          <button
+            className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+            onClick={handlePrev}
+            disabled={prevCursors.length === 0}
+          >
+            « Prev
+          </button>
+          <button
+            className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+            onClick={handleNext}
+            disabled={!nextCursor}
+          >
+            Next »
+          </button>
+        </div>
       </div>
     </div>
   );

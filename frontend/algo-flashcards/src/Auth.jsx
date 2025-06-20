@@ -97,79 +97,100 @@ export default function Auth({ onLogin }) {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h2>{isSignUp ? 'Sign Up' : 'Log In'}</h2>
-        {error && <p className="auth-error">{error}</p>}
+    <div className="fixed inset-0 min-h-screen bg-gray-100 flex items-center justify-center px-4 z-0">
+      <div className="max-w-screen-xl w-full bg-white shadow-md rounded-xl overflow-hidden flex flex-col lg:flex-row">
+        {/* Form Section */}
+        <div className="w-full lg:w-1/2 p-8 sm:p-12">
+          <h2 className="mt-8 text-2xl font-extrabold text-center text-gray-900 flex items-center justify-center gap-3">
+            <img
+              src="/icon.png"
+              alt="Card.io Logo"
+              className="w-10 h-10 inline-block"
+              style={{ marginBottom: 2 }}
+            />
+            {isSignUp ? 'Create your Card.io account' : 'Log in to Card.io'}
+          </h2>
 
-        <form onSubmit={isSignUp ? handleSignUp : handleLogin}>
-          <label className="auth-field">
-            Username
+          {error && (
+            <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">
+              {error}
+            </p>
+          )}
+
+          <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="mt-8 space-y-4">
             <input
               name="username"
               type="text"
+              placeholder="Username"
               value={formData.username}
               onChange={handleChange}
               required
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
-          </label>
-
-          {isSignUp && (
-            <label className="auth-field">
-              Email
+            {isSignUp && (
               <input
                 name="email"
                 type="email"
+                placeholder="Email"
                 value={formData.email}
                 onChange={handleChange}
                 required
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
-            </label>
-          )}
-
-          <label className="auth-field">
-            Password
+            )}
             <input
               name="password"
               type="password"
+              placeholder="Password"
               value={formData.password}
               onChange={handleChange}
               required
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
-          </label>
-
-          {isSignUp && (
-            <label className="auth-field">
-              Confirm Password
+            {isSignUp && (
               <input
                 name="password2"
                 type="password"
+                placeholder="Confirm Password"
                 value={formData.password2}
                 onChange={handleChange}
                 required
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
-            </label>
-          )}
+            )}
+            <button
+              type="submit"
+              className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
+            >
+              {isSignUp ? 'Sign Up' : 'Log In'}
+            </button>
+          </form>
 
-          <button type="submit" className="auth-button">
-            {isSignUp ? 'Create Account' : 'Log In'}
-          </button>
-        </form>
+          <p className="mt-4 text-center text-sm text-gray-600">
+            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+            <button
+              className="text-indigo-600 hover:underline font-medium"
+              onClick={() => {
+                setError('')
+                setIsSignUp(prev => !prev)
+              }}
+            >
+              {isSignUp ? 'Log In' : 'Sign Up'}
+            </button>
+          </p>
+        </div>
 
-        <p className="auth-toggle">
-          {isSignUp
-            ? 'Already have an account?'
-            : "Don't have an account?"}{' '}
-          <button
-            onClick={() => {
-              setError('')
-              setIsSignUp(f => !f)
+        {/* Image Section */}
+        <div className="hidden lg:flex w-full lg:w-1/2 bg-indigo-100 items-center justify-center">
+          <div
+            className="m-12 w-full max-w-md bg-contain bg-center bg-no-repeat"
+            style={{
+              backgroundImage:
+                "url('https://storage.googleapis.com/devitary-image-host.appspot.com/15848031292911696601-undraw_designer_life_w96d.svg')",
+              height: '400px',
             }}
-            className="toggle-btn"
-          >
-            {isSignUp ? 'Log In' : 'Sign Up'}
-          </button>
-        </p>
+          />
+        </div>
       </div>
     </div>
   )

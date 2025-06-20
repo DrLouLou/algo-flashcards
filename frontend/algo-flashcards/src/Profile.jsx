@@ -54,22 +54,24 @@ export default function Profile() {
   if (!user) return <div>Loading...</div>
 
   return (
-    <div className="profile-page">
-      <h2>User Profile</h2>
-      <p><b>Username:</b> {user.username}</p>
-      <p><b>Email:</b> {user.email}</p>
-      <h3>Your Decks</h3>
-      <ul>
-        {Array.isArray(decks.results) && decks.results.map(deck => (
-          <li key={deck.id}>
-            <b>{deck.name}</b> - Shared: {deck.shared ? 'Yes' : 'No'}
-            <button style={{marginLeft:8}} onClick={() => toggleShare(deck)}>
-              {deck.shared ? 'Unshare' : 'Share'}
-            </button>
-          </li>
-        ))}
-      </ul>
-      <SettingsPanel />
+    <div className="min-h-screen w-full bg-gray-50 flex justify-center items-center py-10 px-2">
+      <div className="profile-page bg-white rounded-2xl shadow-xl p-8 w-full max-w-xl">
+        <h2>User Profile</h2>
+        <p><b>Username:</b> {user.username}</p>
+        <p><b>Email:</b> {user.email}</p>
+        <h3>Your Decks</h3>
+        <ul>
+          {Array.isArray(decks.results) && decks.results.map(deck => (
+            <li key={deck.id}>
+              <b>{deck.name}</b> - Shared: {deck.shared ? 'Yes' : 'No'}
+              <button style={{marginLeft:8}} onClick={() => toggleShare(deck)}>
+                {deck.shared ? 'Unshare' : 'Share'}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <SettingsPanel />
+      </div>
     </div>
   )
 }

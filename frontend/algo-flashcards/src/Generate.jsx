@@ -76,109 +76,111 @@ export default function Generate() {
   }
 
   return (
-    <div className="create-card-page" style={{ padding: "2rem" }}>
-      <button onClick={() => nav(-1)} className="cancel-btn">
-        ← Back
-      </button>
-      <h1>Generate a New Flashcard</h1>
+    <div className="min-h-screen w-full bg-gray-50 flex justify-center items-center py-10 px-2">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-8">
+        <button onClick={() => nav(-1)} className="cancel-btn">
+           Back
+        </button>
+        <h1 className="text-2xl font-semibold mb-6">Generate a New Flashcard</h1>
 
-      {/* step 1: your prompt form */}
-      {!form && (
-        <form onSubmit={handleGenerate} style={{ marginBottom: "2rem" }}>
-          <textarea
-            rows={6}
-            style={{ width: "100%", marginBottom: "1rem" }}
-            placeholder="Enter a problem name or full description…"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-          />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="login-button"
-          >
-            {loading ? "Generating…" : "Generate"}
-          </button>
-        </form>
-      )}
-
-      {error && <p className="error">{error}</p>}
-
-      {/* step 2: once we have `form`, render a full CreateCard-style form */}
-      {form && (
-        <form
-          onSubmit={handleSave}
-          className="create-card-form"
-          style={{ marginTop: "2rem" }}
-        >
-          <h2>Edit &amp; Save Your Flashcard</h2>
-
-          <label>
-            Deck
-            <select
-              name="deck"
-              value={form.deck}
-              onChange={handleChange}
-              required
+        {/* step 1: your prompt form */}
+        {!form && (
+          <form onSubmit={handleGenerate} style={{ marginBottom: "2rem" }}>
+            <textarea
+              rows={6}
+              style={{ width: "100%", marginBottom: "1rem" }}
+              placeholder="Enter a problem name or full description…"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+            />
+            <button
+              type="submit"
+              disabled={loading || !input.trim()}
+              className="login-button"
             >
-              {decks.map(d => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              {loading ? "Generating…" : "Generate"}
+            </button>
+          </form>
+        )}
 
-          {[
-            "problem",
-            "difficulty",
-            "category",
-            "hint",
-            "complexity",
-          ].map(field => (
-            <label key={field}>
-              {field[0].toUpperCase() + field.slice(1)}
-              <input
-                name={field}
-                value={form[field]}
+        {error && <p className="error">{error}</p>}
+
+        {/* step 2: once we have `form`, render a full CreateCard-style form */}
+        {form && (
+          <form
+            onSubmit={handleSave}
+            className="create-card-form"
+            style={{ marginTop: "2rem" }}
+          >
+            <h2>Edit &amp; Save Your Flashcard</h2>
+
+            <label>
+              Deck
+              <select
+                name="deck"
+                value={form.deck}
                 onChange={handleChange}
-                required={field === "problem" || field === "difficulty"}
+                required
+              >
+                {decks.map(d => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {[
+              "problem",
+              "difficulty",
+              "category",
+              "hint",
+              "complexity",
+            ].map(field => (
+              <label key={field}>
+                {field[0].toUpperCase() + field.slice(1)}
+                <input
+                  name={field}
+                  value={form[field]}
+                  onChange={handleChange}
+                  required={field === "problem" || field === "difficulty"}
+                />
+              </label>
+            ))}
+
+            <label>
+              Pseudocode
+              <textarea
+                name="pseudo"
+                value={form.pseudo}
+                onChange={handleChange}
               />
             </label>
-          ))}
 
-          <label>
-            Pseudocode
-            <textarea
-              name="pseudo"
-              value={form.pseudo}
-              onChange={handleChange}
-            />
-          </label>
+            <label>
+              Solution
+              <textarea
+                name="solution"
+                value={form.solution}
+                onChange={handleChange}
+              />
+            </label>
 
-          <label>
-            Solution
-            <textarea
-              name="solution"
-              value={form.solution}
-              onChange={handleChange}
-            />
-          </label>
-
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-            <button type="submit" className="save-btn">
-              Save Card
-            </button>
-            <button
-              type="button"
-              onClick={() => setForm(null)}
-              className="cancel-btn"
-            >
-              Regenerate
-            </button>
-          </div>
-        </form>
-      )}
+            <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+              <button type="submit" className="save-btn">
+                Save Card
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(null)}
+                className="cancel-btn"
+              >
+                Regenerate
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   )
 }

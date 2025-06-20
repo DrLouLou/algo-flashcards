@@ -154,27 +154,31 @@ export default function Learn() {
   // nothing due?
   if (loading) {
     return (
-      <div className="learn-page">
-        <div className="learn-header" style={{display:'flex',alignItems:'center',gap:24,marginBottom:16}}>
-          <h2 className="text-xl font-semibold mb-2" style={{margin:0}}>{deckName ? `Learning: ${deckName}` : 'No Deck Selected'}</h2>
+      <div className="min-h-screen w-full bg-gray-50 flex justify-center items-center py-10 px-2">
+        <div className="learn-page bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl">
+          <div className="learn-header flex items-center gap-6 mb-4">
+            <h2 className="text-xl font-semibold mb-2">{deckName ? `Learning: ${deckName}` : 'No Deck Selected'}</h2>
+          </div>
+          <hr className="mb-4"/>
+          <p>Loading cards and stats…</p>
         </div>
-        <hr style={{marginBottom:16}}/>
-        <p>Loading cards and stats…</p>
       </div>
     );
   }
 
   if (queue.length === 0) {
     return (
-      <div className="learn-page">
-        <div className="learn-header" style={{display:'flex',alignItems:'center',gap:24,marginBottom:16}}>
-          <h2 className="text-xl font-semibold mb-2" style={{margin:0}}>{deckName ? `Learning: ${deckName}` : 'No Deck Selected'}</h2>
+      <div className="min-h-screen w-full bg-gray-50 flex justify-center items-center py-10 px-2">
+        <div className="learn-page bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl">
+          <div className="learn-header flex items-center gap-6 mb-4">
+            <h2 className="text-xl font-semibold mb-2">{deckName ? `Learning: ${deckName}` : 'No Deck Selected'}</h2>
+          </div>
+          <hr className="mb-4"/>
+          <p>No cards available to learn in this deck. Try selecting a different deck or adding new cards.</p>
+          <button onClick={() => navigate(-1)} className="back-btn">
+            Back
+          </button>
         </div>
-        <hr style={{marginBottom:16}}/>
-        <p>No cards available to learn in this deck. Try selecting a different deck or adding new cards.</p>
-        <button onClick={() => navigate(-1)} className="back-btn">
-          Back
-        </button>
       </div>
     )
   }

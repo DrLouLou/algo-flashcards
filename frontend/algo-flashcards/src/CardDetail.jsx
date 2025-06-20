@@ -181,7 +181,7 @@ export default function CardDetail({ decks }) {
     : { to: '/', state: undefined };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 relative">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100">
       {/* Back button */}
       <div className="absolute top-6 left-6 z-10">
         <Link {...backToDeck} className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-semibold text-base transition"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' /></svg>Back</Link>

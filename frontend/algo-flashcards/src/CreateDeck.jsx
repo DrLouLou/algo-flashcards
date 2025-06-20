@@ -94,88 +94,90 @@ export default function CreateDeck({reloadDecks}) {
   const selectedCardType = cardTypes.find(ct => String(ct.id) === String(form.card_type));
 
   return (
-    <div className="create-deck-page">
-      <h2>New Deck</h2>
-      {error && <p className="error bg-red-50 text-red-700 px-3 py-2 rounded mb-2">{error}</p>}
-      {success && <p className="bg-green-50 text-green-700 px-3 py-2 rounded mb-2">{success}</p>}
-      <form onSubmit={handleSubmit} className="create-deck-form">
-        <label>
-          Name
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            required
-          />
-        </label>
-        <label>
-          Description
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Tags
-          <TagEditor
-            tags={form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
-            onChange={handleTagsChange}
-            addButtonLabel="Add Tag"
-          />
-        </label>
-        <label>
-          Card Type
-          <div className="flex gap-2 items-center">
-            <select
-              name="card_type"
-              value={form.card_type}
+    <div className="min-h-screen w-full bg-gray-50 flex justify-center items-center py-10 px-2">
+      <div className="create-deck-page bg-white rounded-2xl shadow-xl p-8 w-full max-w-xl">
+        <h2>New Deck</h2>
+        {error && <p className="error bg-red-50 text-red-700 px-3 py-2 rounded mb-2">{error}</p>}
+        {success && <p className="bg-green-50 text-green-700 px-3 py-2 rounded mb-2">{success}</p>}
+        <form onSubmit={handleSubmit} className="create-deck-form">
+          <label>
+            Name
+            <input
+              name="name"
+              value={form.name}
               onChange={handleChange}
               required
-            >
-              <option value="">Select a card type…</option>
-              {cardTypes.map(ct => (
-                <option key={ct.id} value={ct.id}>{ct.name}</option>
-              ))}
-            </select>
-          </div>
-        </label>
-        {/* Show card type fields preview if a card type is selected */}
-        {selectedCardType && (
-          <div className="mb-6 mt-2 p-4 bg-white border border-indigo-200 rounded-lg shadow-sm">
-            <div className="font-semibold text-indigo-700 mb-2 flex items-center gap-2">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="#6366f1" opacity="0.1"/><rect x="3" y="5" width="18" height="14" rx="2" stroke="#6366f1" strokeWidth="1.5"/><path d="M7 9h10M7 13h6" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round"/></svg>
-              Fields for this Card Type
-              <span className="relative group ml-1">
-                <Info size={18} className="text-indigo-400 cursor-pointer" />
-                <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-56 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition pointer-events-none z-10 shadow-lg">
-                  These are the fields that every card in this deck will have. You can only add cards with these fields.
-                </span>
-              </span>
+            />
+          </label>
+          <label>
+            Description
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Tags
+            <TagEditor
+              tags={form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
+              onChange={handleTagsChange}
+              addButtonLabel="Add Tag"
+            />
+          </label>
+          <label>
+            Card Type
+            <div className="flex gap-2 items-center">
+              <select
+                name="card_type"
+                value={form.card_type}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select a card type…</option>
+                {cardTypes.map(ct => (
+                  <option key={ct.id} value={ct.id}>{ct.name}</option>
+                ))}
+              </select>
             </div>
-            <ul className="pl-0 space-y-1">
-              {selectedCardType.fields && selectedCardType.fields.length > 0 ? (
-                selectedCardType.fields.map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 py-0.5 px-2 rounded hover:bg-indigo-50 transition-all" style={{listStyle:'none'}}>
-                    <span className="inline-block w-2 h-2 bg-indigo-400 rounded-full"></span>
-                    <span className="inline-block font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-xs border border-indigo-100">{f}</span>
-                  </li>
-                ))
-              ) : (
-                <li className="italic text-gray-400">No fields defined</li>
-              )}
-            </ul>
-          </div>
-        )}
-        <button type="submit" className="save-btn">Create Deck</button>
-        <button
-          type="button"
-          onClick={() => nav(-1)}
-          className="cancel-btn"
-        >
-          Cancel
-        </button>
-      </form>
+          </label>
+          {/* Show card type fields preview if a card type is selected */}
+          {selectedCardType && (
+            <div className="mb-6 mt-2 p-4 bg-white border border-indigo-200 rounded-lg shadow-sm">
+              <div className="font-semibold text-indigo-700 mb-2 flex items-center gap-2">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="#6366f1" opacity="0.1"/><rect x="3" y="5" width="18" height="14" rx="2" stroke="#6366f1" strokeWidth="1.5"/><path d="M7 9h10M7 13h6" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                Fields for this Card Type
+                <span className="relative group ml-1">
+                  <Info size={18} className="text-indigo-400 cursor-pointer" />
+                  <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-56 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition pointer-events-none z-10 shadow-lg">
+                    These are the fields that every card in this deck will have. You can only add cards with these fields.
+                  </span>
+                </span>
+              </div>
+              <ul className="pl-0 space-y-1">
+                {selectedCardType.fields && selectedCardType.fields.length > 0 ? (
+                  selectedCardType.fields.map((f, i) => (
+                    <li key={i} className="flex items-center gap-2 py-0.5 px-2 rounded hover:bg-indigo-50 transition-all" style={{listStyle:'none'}}>
+                      <span className="inline-block w-2 h-2 bg-indigo-400 rounded-full"></span>
+                      <span className="inline-block font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-xs border border-indigo-100">{f}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="italic text-gray-400">No fields defined</li>
+                )}
+              </ul>
+            </div>
+          )}
+          <button type="submit" className="save-btn">Create Deck</button>
+          <button
+            type="button"
+            onClick={() => nav(-1)}
+            className="cancel-btn"
+          >
+            Cancel
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
