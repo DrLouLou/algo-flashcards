@@ -5,6 +5,13 @@ import Editor from '@monaco-editor/react';
 import TagEditor from './TagEditor';
 
 
+// Utility to strictly enforce card data matches card type fields
+function normalizeCardData(fields, data) {
+  const result = {};
+  (fields || []).forEach(f => { result[f] = data && data[f] !== undefined ? data[f] : ''; });
+  return result;
+}
+
 export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -18,8 +25,6 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
     complexity: '',
     tags: '',
   });
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [saving, setSaving] = useState(false);
 
   // Find the selected deck object
@@ -62,6 +67,10 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
   // Only allow submit if a valid deck is selected
   const canSubmit = !!selectedDeck && !!selectedDeck.card_type;
 
+  // Restore error/success state, but only use for rendering, not for logic
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
   // Defensive: if no valid deck, show error and disable form
   useEffect(() => {
     if (!selectedDeck) {
@@ -87,11 +96,8 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
     }
     setSaving(true);
     try {
-      // Only include fields present in cardTypeFields
-      const data = {};
-      (Array.isArray(cardTypeFields) ? cardTypeFields : []).forEach(field => {
-        data[field] = form[field] || '';
-      });
+      // Strictly enforce data layout
+      const data = normalizeCardData(cardTypeFields, form);
       // Always send deck as a plain ID (string or number)
       const deckId = selectedDeck && typeof selectedDeck.id !== 'undefined' ? selectedDeck.id : form.deck;
       if (!deckId) throw new Error('Deck is required.');
@@ -120,7 +126,6 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
           }
         } catch { /* ignore JSON parse errors */ }
         setError(errMsg);
-        setSaving(false);
         return;
       }
       setSuccess('Card created! Redirecting...');
@@ -136,38 +141,53 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
   };
 
   // Render deck select if multiple decks
+  // Only render fields from cardTypeFields, never show 'tags' or (for starter deck) 'category' as fields
+  const isStarter = Array.isArray(cardTypeFields) && cardTypeFields.includes('category') && cardTypeFields.includes('problem') && cardTypeFields.length === 7;
+  const category = form.category;
+
+  // --- Metadata pills: tags and (for default deck) category ---
+  // Show tags and, for starter deck, category as metadata above the form
+  // (category is not editable here, just shown as a pill if present)
+
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex justify-center items-center py-10 px-2">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-8">
-        <h2 className="mb-8 text-3xl font-semibold text-gray-800 text-center">
-          New Flashcard
-        </h2>
+    <div className="min-h-screen w-full bg-gradient-subtle font-sans flex justify-center items-center py-14 px-2">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-card p-10">
+        <h2 className="mb-8 text-3xl font-bold text-midnight text-center tracking-tight">New Flashcard</h2>
+        {/* Metadata pills above form */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {isStarter && category && (
+            <span className="bg-accent-purple/10 text-accent-purple px-3 py-1 rounded-pill text-xs font-medium shadow-card animate-card-pop">{category}</span>
+          )}
+          {(form.tags || '').split(',').map(t => t.trim()).filter(Boolean).map(tag => (
+            <span key={tag} className="bg-sky/10 text-sky px-3 py-1 rounded-pill text-xs font-medium shadow-card animate-card-pop">{tag}</span>
+          ))}
+        </div>
         {error && (
-          <p className="mb-6 rounded-md bg-red-50 px-4 py-2 text-sm text-red-600">
+          <p className="mb-6 rounded-md bg-red-50 px-4 py-2 text-base text-red-600 font-medium">
             {error}
           </p>
         )}
         {success && (
-          <p className="mb-6 rounded-md bg-green-50 px-4 py-2 text-sm text-green-700">
+          <p className="mb-6 rounded-md bg-green-50 px-4 py-2 text-base text-green-700 font-medium">
             {success}
           </p>
         )}
         {showFieldWarning && (
-          <p className="mb-6 rounded-md bg-yellow-50 px-4 py-2 text-sm text-yellow-700">
+          <p className="mb-6 rounded-md bg-yellow-50 px-4 py-2 text-base text-yellow-700 font-medium">
             Warning: This card type has no fields. You can still add tags.
           </p>
         )}
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Only show deck select if NOT in DeckDetail (no defaultDeckId) and more than one deck */}
           {(!defaultDeckId && Array.isArray(decks) && decks.length > 1) && (
             <div className="col-span-full mb-4">
-              <label className="mb-1 text-sm font-medium text-gray-700">Deck</label>
+              <label className="mb-1 text-base font-semibold text-midnight">Deck</label>
               <select
                 name="deck"
                 value={form.deck}
                 onChange={handleChange}
                 required
-                className="rounded-md border border-gray-300 py-2 px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="rounded-xl border border-gray-300 py-3 px-4 text-base shadow-sm focus:border-sky focus:ring-1 focus:ring-sky bg-lightgray"
               >
                 {Array.isArray(decks) ? decks.map(d => (
                   <option key={d.id} value={d.id}>{d.name}</option>
@@ -178,23 +198,23 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
           {/* If in DeckDetail, show deck name as read-only info */}
           {(defaultDeckId && selectedDeck) && (
             <div className="col-span-full mb-4">
-              <label className="mb-1 text-sm font-medium text-gray-700">Deck</label>
+              <label className="mb-1 text-base font-semibold text-midnight">Deck</label>
               <input
                 type="text"
                 value={selectedDeck.name}
                 disabled
-                className="rounded-md border border-gray-300 py-2 px-3 text-sm shadow-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+                className="rounded-xl border border-gray-300 py-3 px-4 text-base shadow-sm bg-lightgray text-midnight cursor-not-allowed"
               />
             </div>
           )}
-          {/* Only render fields from cardTypeFields */}
-          {(Array.isArray(cardTypeFields) ? cardTypeFields : []).filter(field => field !== 'tags').map(field => (
+          {/* Only render fields from cardTypeFields, never 'tags' or (for starter) 'category' */}
+          {(Array.isArray(cardTypeFields) ? cardTypeFields : []).filter(field => field !== 'tags' && (!isStarter || field !== 'category')).map(field => (
             <div key={field} className="flex flex-col col-span-1">
-              <label className="mb-1 text-sm font-medium text-gray-700">
+              <label className="mb-1 text-base font-semibold text-midnight">
                 {field.charAt(0).toUpperCase() + field.slice(1)}
               </label>
               {field === 'solution' ? (
-                <div className="rounded-md border border-gray-300 shadow-sm overflow-hidden">
+                <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
                   <Editor
                     height="30vh"
                     defaultLanguage="python"
@@ -210,7 +230,7 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
                   value={form[field] || ''}
                   onChange={handleChange}
                   rows={4}
-                  className="rounded-md border border-gray-300 py-2 px-3 text-sm shadow-sm resize-y focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  className="rounded-xl border border-gray-300 py-3 px-4 text-base shadow-sm resize-y focus:border-sky focus:ring-1 focus:ring-sky bg-lightgray"
                 />
               ) : (
                 <input
@@ -218,12 +238,12 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
                   value={form[field] || ''}
                   onChange={handleChange}
                   required={Array.isArray(selectedDeck?.card_type?.fields) ? selectedDeck.card_type.fields.includes(field) : false}
-                  className="rounded-md border border-gray-300 py-2 px-3 text-sm shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  className="rounded-xl border border-gray-300 py-3 px-4 text-base shadow-sm focus:border-sky focus:ring-1 focus:ring-sky bg-lightgray"
                 />
               )}
             </div>
           ))}
-          {/* TAGS always shown */}
+          {/* TAGS editor always shown, but not as a field */}
           <div className="flex flex-col col-span-full">
             <TagEditor
               tags={form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
@@ -232,20 +252,19 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
               addButtonLabel="Add Tag"
             />
           </div>
-
           {/* buttons */}
           <div className="col-span-full flex justify-end gap-4 pt-2">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="rounded-md bg-red-600 px-5 py-2 text-sm font-medium text-white shadow transition hover:bg-red-700"
+              className="rounded-xl bg-red-500 px-6 py-3 text-base font-medium text-white shadow-card hover:bg-red-600 hover:shadow-card-hover transition-colors"
               disabled={saving}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="rounded-md bg-green-600 px-5 py-2 text-sm font-medium text-white shadow transition hover:bg-green-700"
+              className="rounded-xl bg-sky px-6 py-3 text-base font-semibold text-white shadow-card hover:bg-sky/90 hover:shadow-card-hover transition-colors animate-card-pop"
               disabled={saving || !canSubmit}
             >
               {saving ? 'Saving...' : 'Create Card'}

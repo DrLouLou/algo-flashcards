@@ -148,46 +148,46 @@ export default function DeckDetail({ decks, reloadDecks }) {
     }
   };
 
-  if (decksLoading) return <div className="p-8">Loading decks...</div>;
-  if (deckNotFound) return <div className="p-8">Deck not found.</div>;
-  if (loading) return <div className="p-8">Loading…</div>;
-  if (error) return <div className="p-8 text-red-600">{error}</div>;
-  if (!deck) return <div className="p-8">Deck not found.</div>;
+  if (decksLoading) return <div className="p-8 text-center text-midnight font-sans">Loading decks...</div>;
+  if (deckNotFound) return <div className="p-8 text-center text-midnight font-sans">Deck not found.</div>;
+  if (loading) return <div className="p-8 text-center text-midnight font-sans">Loading…</div>;
+  if (error) return <div className="p-8 text-center text-red-600 font-sans">{error}</div>;
+  if (!deck) return <div className="p-8 text-center text-midnight font-sans">Deck not found.</div>;
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex justify-center items-start py-10 px-2">
-      <div className="w-full max-w-6xl bg-white rounded-2xl shadow-xl p-6">
-        <div className="mb-8 flex items-center justify-between flex-wrap gap-2">
+    <div className="min-h-screen w-full bg-gradient-subtle font-sans flex justify-center items-start py-14 px-2">
+      <div className="w-full max-w-6xl bg-white rounded-2xl shadow-card p-10">
+        <div className="mb-10 flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight mb-1 flex items-center gap-4">
+            <h2 className="text-4xl font-bold tracking-tight mb-2 flex items-center gap-4 text-midnight">
               {deck.name}
               <Link to="/">
-                <button className="ml-4 rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Back to Decks</button>
+                <button className="ml-4 rounded-xl border border-sky bg-white px-5 py-2 text-base font-medium text-sky hover:bg-sky hover:text-white transition-colors shadow-card hover:shadow-card-hover">Back to Decks</button>
               </Link>
             </h2>
-            <p className="text-gray-600 text-sm mb-2">{deck.description}</p>
+            <p className="text-gray-500 text-base mb-2">{deck.description}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               onClick={() => setShowAddCard(true)}
-              className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
+              className="rounded-xl bg-sky px-6 py-3 text-base font-semibold text-white shadow-card hover:bg-sky/90 hover:shadow-card-hover transition-colors animate-card-pop"
+              style={{boxShadow:'0 2px 8px rgba(58,175,255,0.10)'}}
             >
-              <HiPlus className="h-5 w-5" />
+              <HiPlus className="h-6 w-6" />
               Add Card
             </button>
             <button
               onClick={() => navigate(`/learn/${deck.id}`)}
-              className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+              className="inline-flex items-center gap-2 rounded-xl border border-accent-purple bg-white px-6 py-3 text-base font-semibold text-accent-purple shadow-card hover:bg-accent-purple hover:text-white hover:shadow-card-hover transition-colors"
             >
               Learn
             </button>
           </div>
         </div>
-
         {/* Add Card Modal/Inline */}
         {showAddCard && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl w-full relative">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full relative">
               <button
                 onClick={() => setShowAddCard(false)}
                 className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
@@ -199,7 +199,6 @@ export default function DeckDetail({ decks, reloadDecks }) {
                 decks={decksArr}
                 reloadCards={() => {
                   setShowAddCard(false);
-                  // re-fetch cards for this deck
                   fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cards/?deck=${id}`)
                     .then(r => r.json())
                     .then(d => setCards(d.results || []));
@@ -210,13 +209,12 @@ export default function DeckDetail({ decks, reloadDecks }) {
             </div>
           </div>
         )}
-
         {/* Difficulty filter */}
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-6 flex flex-wrap gap-3 items-center">
           {['Easy', 'Medium', 'Hard'].map(diff => {
             const active = selectedDifficulties.length === 0 || selectedDifficulties.includes(diff);
             const COLOR = {
-              Easy:   '#28a745',
+              Easy:   '#3AAFFF',
               Medium: '#ffc107',
               Hard:   '#dc3545',
             }[diff];
@@ -224,7 +222,7 @@ export default function DeckDetail({ decks, reloadDecks }) {
               <button
                 key={diff}
                 onClick={() => toggleDifficulty(diff)}
-                className={`px-3 py-1 rounded-full text-sm border transition ${active ? 'text-white' : 'text-gray-700 hover:bg-gray-50'}`}
+                className={`px-4 py-1.5 rounded-pill text-base font-medium border transition-shadow transition-colors shadow-card ${active ? 'text-white' : 'text-midnight hover:bg-lightgray'} animate-card-pop`}
                 style={
                   active
                     ? { backgroundColor: COLOR, borderColor: COLOR }
@@ -236,10 +234,9 @@ export default function DeckDetail({ decks, reloadDecks }) {
             );
           })}
         </div>
-
         {/* Tag filter */}
-        <div className="mb-6">
-          <div className="font-medium mb-1">Filter by Tag</div>
+        <div className="mb-8">
+          <div className="font-semibold mb-2 text-midnight">Filter by Tag</div>
           <TagEditor
             tags={selectedTags}
             onChange={setSelectedTags}
@@ -247,21 +244,25 @@ export default function DeckDetail({ decks, reloadDecks }) {
             addButtonLabel="Search Tag"
           />
         </div>
-
-        {/* Card list */}
-        <CardContainer cardData={cards} />
-
+        {/* Card list or empty state */}
+        {cards.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24">
+            <div className="text-xl font-semibold text-midnight mb-2">No cards for this filter</div>
+          </div>
+        ) : (
+          <CardContainer cardData={cards} />
+        )}
         {/* Cursor Pagination controls */}
-        <div className="flex justify-center gap-4 mt-6">
+        <div className="flex justify-center gap-4 mt-10">
           <button
-            className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+            className="rounded-xl border border-sky bg-white px-5 py-2 text-base font-medium text-sky hover:bg-sky hover:text-white transition-colors shadow-card hover:shadow-card-hover"
             onClick={handlePrev}
             disabled={prevCursors.length === 0}
           >
             « Prev
           </button>
           <button
-            className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+            className="rounded-xl border border-sky bg-white px-5 py-2 text-base font-medium text-sky hover:bg-sky hover:text-white transition-colors shadow-card hover:shadow-card-hover"
             onClick={handleNext}
             disabled={!nextCursor}
           >

@@ -20,18 +20,23 @@ function Card({ card }) {
   const previewFields = getPreviewFields(cardType, card.data);
 
   return (
-    <div className="flex h-full flex-col gap-4 p-6">
+    <div className="flex h-full flex-col gap-4 p-7 font-sans">
       {/* Render only preview fields for deck overview */}
       {previewFields.map(field => (
-        <div key={field} className="mb-1">
-          <span className="font-semibold capitalize text-gray-800">{field}:</span>{' '}
+        <div key={field} className="mb-1 flex items-center gap-2">
+          <span className="font-semibold capitalize text-midnight text-base">{field}:</span>{' '}
           {field === 'difficulty' ? (
-            <span className={`${COLORS[(card.data[field] || '').toLowerCase()]}`}>{card.data[field]}</span>
+            <span className={`inline-flex items-center gap-1 ${COLORS[(card.data[field] || '').toLowerCase()]}`}>{card.data[field]}{' '}
+              {card.data[field]?.toLowerCase() === 'easy' && <svg className="w-4 h-4" fill="none" stroke="#3AAFFF" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /></svg>}
+              {card.data[field]?.toLowerCase() === 'medium' && <svg className="w-4 h-4" fill="none" stroke="#ffc107" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /></svg>}
+              {card.data[field]?.toLowerCase() === 'hard' && <svg className="w-4 h-4" fill="none" stroke="#dc3545" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /></svg>}
+            </span>
           ) : (
             <span>{card.data[field]}</span>
           )}
         </div>
       ))}
+      {/* Progress bar placeholder */}
       <div className="mt-auto flex gap-2">
         <Link
           to={`/cards/${kebab}`}
@@ -39,7 +44,7 @@ function Card({ card }) {
           className="flex-1"
         >
           <button
-            className="w-full rounded-md border border-indigo-600 bg-white text-indigo-600 px-4 py-2 text-sm font-medium transition-colors hover:bg-indigo-600 hover:text-white"
+            className="w-full rounded-xl border border-sky bg-white text-sky px-4 py-2 text-base font-medium transition-colors hover:bg-sky hover:text-white shadow-card hover:shadow-card-hover animate-card-pop"
           >
             View
           </button>

@@ -22,8 +22,13 @@ export default function NavBar({ onLogout }) {
   return (
     <nav className="fixed inset-x-0 top-0 z-50 bg-white/80 backdrop-blur shadow-sm">
       <div className="mx-auto max-w-7xl h-16 flex items-center justify-between px-4">
-        {/* -------- Left: nav links -------- */}
+        {/* -------- Left: logo and nav links -------- */}
         <div className="flex items-center gap-6">
+          <Link to="/" className="flex items-center gap-2 group">
+            <img src="/icon.png" alt="Card.io Logo" className="h-8 w-8" />
+            <span className="font-extrabold text-lg text-indigo-700 group-hover:text-indigo-900 tracking-tight">Card.io</span>
+          </Link>
+          {/* Navigation links */}
           {menu.map(({ to, label }) => {
             const active = pathname === to;
             return (

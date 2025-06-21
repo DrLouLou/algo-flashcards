@@ -79,23 +79,33 @@ export default function CardTypeManager({ open, onClose, editCardType }) {
     // Update fieldsList and reset layout when fields change
     const list = form.fields.split(',').map(f => f.trim()).filter(Boolean);
     setFieldsList(list);
-    setLayout(l => {
-      // Remove fields not in list
-      const front = l.front.filter(f => list.includes(f));
-      const back = l.back.filter(f => list.includes(f));
-      // Add new fields to front by default
-      const assigned = new Set([...front, ...back]);
-      const unassigned = list.filter(f => !assigned.has(f));
-      return {
-        ...l,
-        front: [...front, ...unassigned],
-        back,
-        preview: l.preview ? l.preview.filter(f => list.includes(f)) : [],
-        hidden: l.hidden ? l.hidden.filter(f => list.includes(f)) : [],
-      };
-    });
-    setPreviewFields(prev => prev.filter(f => list.includes(f)));
-    setHiddenFields(prev => prev.filter(f => list.includes(f)));
+    // Only update layout from fields if not editing an existing card type
+    if (!isEdit || !editCardType) {
+      setLayout(l => {
+        // Remove fields not in list
+        const front = l.front.filter(f => list.includes(f));
+        const back = l.back.filter(f => list.includes(f));
+        // Add new fields to front by default
+        const assigned = new Set([...front, ...back]);
+        const unassigned = list.filter(f => !assigned.has(f));
+        return {
+          ...l,
+          front: [...front, ...unassigned],
+          back,
+          preview: l.preview ? l.preview.filter(f => list.includes(f)) : [],
+          hidden: l.hidden ? l.hidden.filter(f => list.includes(f)) : [],
+        };
+      });
+      setPreviewFields(prev => prev.filter(f => list.includes(f)));
+      setHiddenFields(prev => prev.filter(f => list.includes(f)));
+    }
+  }, [form.fields, isEdit, editCardType]);
+
+  // Prevent 'tags' from being added as a field in new or edited card types
+  useEffect(() => {
+    // Remove 'tags' from fieldsList and form.fields if present
+    setFieldsList(list => list.filter(f => f.toLowerCase() !== 'tags'));
+    setForm(f => ({ ...f, fields: f.fields.split(',').map(x => x.trim()).filter(x => x.toLowerCase() !== 'tags').join(',') }));
   }, [form.fields]);
 
   if (!open) return null;
@@ -211,6 +221,15 @@ export default function CardTypeManager({ open, onClose, editCardType }) {
     }
   };
 
+  // In all field lists for layout, preview, hidden, filter out 'tags'
+  const filteredFieldsList = fieldsList.filter(f => f.toLowerCase() !== 'tags');
+  const filteredLayout = {
+    front: layout.front.filter(f => f.toLowerCase() !== 'tags'),
+    back: layout.back.filter(f => f.toLowerCase() !== 'tags'),
+    preview: previewFields.filter(f => f.toLowerCase() !== 'tags'),
+    hidden: hiddenFields.filter(f => f.toLowerCase() !== 'tags'),
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
       <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full relative">
@@ -237,7 +256,7 @@ export default function CardTypeManager({ open, onClose, editCardType }) {
             )}
           </label>
           {/* Layout editor */}
-          {fieldsList.length > 0 && (
+          {filteredFieldsList.length > 0 && (
             <>
               <div className="my-4">
                 <div className="flex gap-4">
@@ -247,7 +266,7 @@ export default function CardTypeManager({ open, onClose, editCardType }) {
                     onDragOver={handleDragOver}
                   >
                     <div className="font-semibold mb-1">Front of Card</div>
-                    {layout.front.map(f => (
+                    {filteredLayout.front.map(f => (
                       <div
                         key={f}
                         draggable
@@ -264,7 +283,7 @@ export default function CardTypeManager({ open, onClose, editCardType }) {
                     onDragOver={handleDragOver}
                   >
                     <div className="font-semibold mb-1">Back of Card</div>
-                    {layout.back.map(f => (
+                    {filteredLayout.back.map(f => (
                       <div
                         key={f}
                         draggable
@@ -285,13 +304,13 @@ export default function CardTypeManager({ open, onClose, editCardType }) {
                   <span className="ml-1 text-xs text-gray-500">(shown in deck overview)</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {fieldsList.map(f => (
+                  {filteredFieldsList.map(f => (
                     <label key={f} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={previewFields.includes(f)}
+                        checked={filteredLayout.preview.includes(f)}
                         onChange={() => handlePreviewToggle(f)}
-                        required={previewFields.length === 0} // Only require if none selected
+                        required={filteredLayout.preview.length === 0} // Only require if none selected
                       />
                       <span>{f}</span>
                     </label>
@@ -300,15 +319,15 @@ export default function CardTypeManager({ open, onClose, editCardType }) {
                 <div className="text-xs text-gray-500 mt-2">Select <span className="font-semibold">at least one</span> field to show for each card in the deck overview. These fields will be visible in the card preview grid.</div>
               </div>
               {/* Hidden fields selector */}
-              {fieldsList.length > 0 && (
+              {filteredFieldsList.length > 0 && (
                 <div className="my-4">
                   <div className="font-semibold mb-1">Hidden Fields</div>
                   <div className="flex flex-wrap gap-2">
-                    {fieldsList.map(f => (
+                    {filteredFieldsList.map(f => (
                       <label key={f} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={hiddenFields.includes(f)}
+                          checked={filteredLayout.hidden.includes(f)}
                           onChange={() => handleHiddenToggle(f)}
                         />
                         <span>{f}</span>

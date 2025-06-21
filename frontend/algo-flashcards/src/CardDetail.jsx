@@ -126,16 +126,20 @@ export default function CardDetail({ decks }) {
 
   if (!formData) return <p>Loading…</p>;
 
+  // --- Metadata pills: tags and (for default deck) category ---
+  // Show tags and, for starter deck, category as metadata above the card
+  const tagsArr = (formData.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+  const isStarter = Array.isArray(cardType?.fields) && cardType.fields.includes('category') && cardType.fields.includes('problem') && cardType.fields.length === 7;
+  const category = formData.data?.category;
+
   // Shared handlers
-  const handleChange = e => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
   const handleSave = () => {
+    // Strictly enforce data layout before saving
+    const normalizedData = normalizeCardData(cardType.fields, formData.data);
     fetchWithAuth(`${API}/cards/${cardId}/`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({ ...formData, data: normalizedData }),
     })
       .then(res => {
         if (!res.ok) throw new Error('Save failed')
@@ -149,7 +153,6 @@ export default function CardDetail({ decks }) {
       })
       .catch(err => alert(`Error: ${err.message}`))
   }
-  const handleReset = () => setFormData(initialData)
   const handleCancel = () => {
     setFormData(initialData)
     setIsEditing(false)
@@ -174,43 +177,45 @@ export default function CardDetail({ decks }) {
       .catch(console.error);
   };
 
-  // Back button logic
-  // Try to use deckId/deckName from location.state, else fallback
-  const backToDeck = location.state && location.state.deckId && location.state.deckName
-    ? { to: `/decks/${(location.state.deckName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`, state: { id: location.state.deckId } }
-    : { to: '/', state: undefined };
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100">
-      {/* Back button */}
-      <div className="absolute top-6 left-6 z-10">
-        <Link {...backToDeck} className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-semibold text-base transition"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' /></svg>Back</Link>
-      </div>
-      <div className="max-w-2xl w-full mx-auto bg-white/90 rounded-3xl shadow-2xl p-8 space-y-8 border border-gray-100 backdrop-blur-md">
-        {/* TAGS */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight flex items-center gap-2"><svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6 text-blue-400' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M7 7h.01M7 11h.01M7 15h.01M11 7h2M11 11h2M11 15h2M15 7h.01M15 11h.01M15 15h.01' /></svg>Tags</h2>
-          <div className="flex flex-wrap gap-2">
-            {isEditing ? (
-              <TagEditor
-                tags={formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
-                onChange={tagsArr => handleTagsChange(tagsArr)}
-              />
-            ) : (
-              (formData.tags || '').split(',').filter(Boolean).map(tag => (
-                <span key={tag} className="border-l-4 border-blue-400 pl-3 bg-blue-100 text-sm text-blue-700 rounded-full py-0.5 px-3 font-medium shadow-sm">{tag}</span>
-              ))
-            )}
-          </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-subtle font-sans">
+      <div className="relative max-w-2xl w-full mx-auto bg-white/90 rounded-2xl shadow-card p-10 space-y-8 border border-gray-100 backdrop-blur-md">
+        {/* Edit button (top-right, always visible) */}
+        <button
+          onClick={() => setIsEditing(true)}
+          className={`absolute top-6 right-6 z-20 px-4 py-2 rounded-xl bg-sky text-white shadow-card hover:bg-accent-purple transition-colors font-semibold flex items-center gap-2 animate-card-pop ${isEditing ? 'hidden' : ''}`}
+          aria-label="Edit Card"
+        >
+          <svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15.232 5.232l3.536 3.536M9 11l6 6M3 21v-4.586a1 1 0 01.293-.707l12-12a1 1 0 011.414 0l4.586 4.586a1 1 0 010 1.414l-12 12a1 1 0 01-.707.293H3z' /></svg>
+          <span>Edit</span>
+        </button>
+        {/* METADATA PILLS: tags and (for starter deck) category */}
+        <div className="flex flex-wrap gap-2 mb-2">
+          {isStarter && category && (
+            <span className="bg-accent-purple/10 text-accent-purple px-3 py-1 rounded-pill text-xs font-medium shadow-card animate-card-pop">{category}</span>
+          )}
+          {tagsArr.map(tag => (
+            <span key={tag} className="bg-sky/10 text-sky px-3 py-1 rounded-pill text-xs font-medium shadow-card animate-card-pop">{tag}</span>
+          ))}
         </div>
+        {/* TAGS editor (edit mode only) */}
+        {isEditing && (
+          <div className="mb-4">
+            <h2 className="text-2xl font-bold text-midnight mb-3 tracking-tight flex items-center gap-2"><svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6 text-sky' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M7 7h.01M7 11h.01M7 15h.01M11 7h2M11 11h2M11 15h2M15 7h.01M15 11h.01M15 15h.01' /></svg>Tags</h2>
+            <TagEditor
+              tags={tagsArr}
+              onChange={tagsArr => handleTagsChange(tagsArr)}
+            />
+          </div>
+        )}
         {/* Status controls if available */}
         {formData.status && (
           <div className="flex gap-2 items-center">
-            <span className="font-semibold text-gray-700">Status:</span>
+            <span className="font-semibold text-midnight">Status:</span>
             {['new','review','known'].map(s => (
               <button
                 key={s}
-                className={`px-3 py-1 rounded-full border text-xs font-semibold transition ${formData.status === s ? 'bg-indigo-500 text-white shadow' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                className={`px-4 py-1.5 rounded-pill border text-xs font-semibold transition-colors shadow-card ${formData.status === s ? 'bg-sky text-white' : 'bg-lightgray text-midnight hover:bg-sky/10'}`}
                 onClick={() => updateStatus(s)}
                 disabled={formData.status === s}
               >
@@ -219,15 +224,15 @@ export default function CardDetail({ decks }) {
             ))}
           </div>
         )}
-        {/* Card fields */}
+        {/* Card fields - unified layout for both modes, but editable in edit mode */}
         <div className="space-y-5">
-          {isEditing ? (
-            // EDIT MODE: show all fields as inputs
-            <>
-              {visibleFrontFields.concat(visibleBackFields.filter(f => !visibleFrontFields.includes(f))).map(field => (
-                <label key={field} className="block">
-                  <span className="block font-semibold text-gray-700 mb-1 tracking-wide">{field.charAt(0).toUpperCase() + field.slice(1)}</span>
-                  {field === 'solution' ? (
+          {!isFlipped ? (
+            // FRONT SIDE
+            visibleFrontFields.filter(field => field !== 'tags' && (!isStarter || field !== 'category')).map(field => (
+              <div key={field} className="flex items-center space-x-2 text-base text-midnight bg-lightgray rounded-xl px-5 py-3 shadow-card border-l-4 border-sky animate-card-pop">
+                <span className="font-semibold w-32 text-sky">{field}:</span>
+                {isEditing ? (
+                  field === 'solution' ? (
                     <Editor
                       height="180px"
                       defaultLanguage="python"
@@ -239,80 +244,69 @@ export default function CardDetail({ decks }) {
                     <textarea
                       name={field}
                       value={formData.data[field] || ''}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                      onChange={e => setFormData(prev => ({ ...prev, data: { ...prev.data, [field]: e.target.value } }))}
+                      className="w-full rounded-xl border border-gray-300 p-3 focus:ring-2 focus:ring-sky focus:border-sky transition-colors bg-white"
                     />
                   ) : (
                     <input
                       type="text"
                       name={field}
                       value={formData.data[field] || ''}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                      onChange={e => setFormData(prev => ({ ...prev, data: { ...prev.data, [field]: e.target.value } }))}
+                      className="w-full rounded-xl border border-gray-300 p-3 focus:ring-2 focus:ring-sky focus:border-sky transition-colors bg-white"
                     />
-                  )}
-                </label>
-              ))}
-              {/* Show hidden fields in edit mode as well */}
-              {hiddenFields.length > 0 && hiddenFields.map(field => (
-                <label key={field} className="block">
-                  <span className="block font-semibold text-gray-700 mb-1 tracking-wide">{field.charAt(0).toUpperCase() + field.slice(1)}</span>
-                  <input
-                    type="text"
-                    name={field}
-                    value={formData.data[field] || ''}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
-                  />
-                </label>
-              ))}
-            </>
+                  )
+                ) : (
+                  field === 'difficulty' ? (
+                    <span className={`difficulty-text ${(formData.data[field] || '').toLowerCase()}`}>{formData.data[field]}</span>
+                  ) : (
+                    <span>{formData.data[field]}</span>
+                  )
+                )}
+              </div>
+            ))
           ) : (
-            // VIEW MODE: front or back
-            <>
-              {!isFlipped ? (
-                // FRONT SIDE
-                <>
-                  {visibleFrontFields.map(field => (
-                    <div key={field} className="flex items-center space-x-2 text-base text-gray-700 bg-blue-50 rounded-lg px-4 py-2 shadow-sm border-l-4 border-blue-300">
-                      <span className="font-semibold w-32 text-blue-900">{field}:</span>
-                      {field === 'difficulty' ? (
-                        <span className={`difficulty-text ${(formData.data[field] || '').toLowerCase()}`}>{formData.data[field]}</span>
-                      ) : (
-                        <span>{formData.data[field]}</span>
-                      )}
-                    </div>
-                  ))}
-                </>
-              ) : (
-                // BACK SIDE
-                <>
-                  {visibleBackFields.length > 0 ? visibleBackFields.map(field => (
-                    <div key={field} className="flex items-center space-x-2 text-base text-gray-700 bg-blue-50 rounded-lg px-4 py-2 shadow-sm border-l-4 border-blue-300">
-                      <span className="font-semibold w-32 text-blue-900">{field}:</span>
-                      {field === 'solution' ? (
-                        <Editor
-                          height="180px"
-                          defaultLanguage="python"
-                          value={formData.data[field] || ''}
-                          options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
-                        />
-                      ) : field === 'pseudo' ? (
-                        <Editor
-                          height="180px"
-                          defaultLanguage="python"
-                          value={formData.data[field] || ''}
-                          options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
-                        />
-                      ) : (
-                        <span>{formData.data[field]}</span>
-                      )}
-                    </div>
-                  )) : <div className="text-gray-400 italic">No back fields defined.</div>}
-                </>
-              )}
-            </>
+            // BACK SIDE
+            visibleBackFields.filter(field => field !== 'tags' && (!isStarter || field !== 'category')).length > 0 ? visibleBackFields.filter(field => field !== 'tags' && (!isStarter || field !== 'category')).map(field => (
+              <div key={field} className="flex items-center space-x-2 text-base text-midnight bg-lightgray rounded-xl px-5 py-3 shadow-card border-l-4 border-sky animate-card-pop">
+                <span className="font-semibold w-32 text-sky">{field}:</span>
+                {isEditing ? (
+                  field === 'solution' || field === 'pseudo' ? (
+                    <Editor
+                      height="180px"
+                      defaultLanguage="python"
+                      value={formData.data[field] || ''}
+                      onChange={val => setFormData(prev => ({ ...prev, data: { ...prev.data, [field]: val ?? '' } }))}
+                      options={{ minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      name={field}
+                      value={formData.data[field] || ''}
+                      onChange={e => setFormData(prev => ({ ...prev, data: { ...prev.data, [field]: e.target.value } }))}
+                      className="w-full rounded-xl border border-gray-300 p-3 focus:ring-2 focus:ring-sky focus:border-sky transition-colors bg-white"
+                    />
+                  )
+                ) : (
+                  <span>{formData.data[field]}</span>
+                )}
+              </div>
+            )) : <div className="text-gray-400 italic">No back fields defined.</div>
           )}
+          {/* Show hidden fields in edit mode as well */}
+          {isEditing && hiddenFields.filter(field => field !== 'tags' && (!isStarter || field !== 'category')).length > 0 && hiddenFields.filter(field => field !== 'tags' && (!isStarter || field !== 'category')).map(field => (
+            <div key={field} className="flex items-center space-x-2 text-base text-midnight bg-lightgray rounded-xl px-5 py-3 shadow-card border-l-4 border-sky animate-card-pop">
+              <span className="font-semibold w-32 text-sky">{field}:</span>
+              <input
+                type="text"
+                name={field}
+                value={formData.data[field] || ''}
+                onChange={e => setFormData(prev => ({ ...prev, data: { ...prev.data, [field]: e.target.value } }))}
+                className="w-full rounded-xl border border-gray-300 p-3 focus:ring-2 focus:ring-sky focus:border-sky transition-colors bg-white"
+              />
+            </div>
+          ))}
         </div>
         {/* Hidden fields reveal buttons and display */}
         {(hiddenFrontFields.length > 0 || hiddenBackFields.length > 0) && (
@@ -335,22 +329,31 @@ export default function CardDetail({ decks }) {
             ))}
           </div>
         )}
-        {/* Action buttons */}
-        <div className="flex justify-between mt-8 gap-4">
-          {isEditing ? (
-            <>
-              <button onClick={handleSave} className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 shadow"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' /></svg><span>Save</span></button>
-              <button onClick={handleReset} className="px-5 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition flex items-center gap-2 shadow"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 4v5h.582M20 20v-5h-.581M5 19l14-14' /></svg><span>Reset</span></button>
-              <button onClick={handleCancel} className="px-5 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition flex items-center gap-2 shadow"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' /></svg><span>Cancel</span></button>
-            </>
-          ) : (
-            <>
-              <button onClick={toggleFlip} className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 shadow"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 12H5M12 5l-7 7 7 7' /></svg><span>Flip</span></button>
-              <button onClick={() => setIsEditing(true)} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15.232 5.232l3.536 3.536M9 11l6 6M3 21v-4.586a1 1 0 01.293-.707l12-12a1 1 0 011.414 0l4.586 4.586a1 1 0 010 1.414l-12 12a1 1 0 01-.707.293H3z' /></svg><span>Edit</span></button>
-            </>
-          )}
+        {/* Flip button (bottom-center, always visible) */}
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-1/2 z-20 flex flex-col items-center">
+          <button
+            onClick={toggleFlip}
+            className="rounded-full bg-accent-purple text-white shadow-card hover:bg-sky transition-colors flex items-center justify-center w-16 h-16 text-2xl font-bold border-4 border-white focus:outline-none focus:ring-2 focus:ring-sky animate-card-pop"
+            aria-label="Flip Card"
+            type="button"
+          >
+            {isFlipped ? (
+              // Arrow down for back
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            ) : (
+              // Arrow up for front
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+            )}
+          </button>
         </div>
       </div>
+      {/* Edit mode actions (Cancel/Save) below card, only in edit mode */}
+      {isEditing && (
+        <div className="flex justify-center gap-6 mt-8">
+          <button onClick={handleCancel} className="px-8 py-3 bg-gray-400 text-white rounded-xl hover:bg-gray-500 transition-colors flex items-center gap-2 shadow-card font-semibold animate-card-pop"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' /></svg><span>Cancel</span></button>
+          <button onClick={handleSave} className="px-8 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center gap-2 shadow-card font-semibold animate-card-pop"><svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' /></svg><span>Save</span></button>
+        </div>
+      )}
     </div>
   );
 }
@@ -358,24 +361,113 @@ export default function CardDetail({ decks }) {
 function HiddenFieldReveal({ field, value }) {
   const [revealed, setRevealed] = useState(false);
   return (
-    <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl p-5 text-center transition-opacity duration-300 shadow-md border border-blue-200 flex flex-col items-center">
+    <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl p-5 text-center transition-all duration-300 shadow-md border border-blue-200 flex flex-col items-center min-h-[90px]">
       <div className="flex items-center justify-center gap-2 mb-2">
         <span className="text-blue-700 font-semibold text-base tracking-wide">{field.charAt(0).toUpperCase() + field.slice(1)}</span>
         <button
           className={`ml-2 text-sm px-4 py-1 rounded-lg bg-blue-200 hover:bg-blue-300 text-blue-800 font-semibold transition shadow`}
           onClick={() => setRevealed(v => !v)}
           type="button"
+          aria-expanded={revealed}
+          aria-controls={`hidden-field-${field}`}
         >
           {revealed ? 'Hide' : 'Reveal'}
         </button>
       </div>
-      <div className={`transition-opacity duration-300 ${revealed ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}> 
-        {revealed && (
-          <div className="w-full bg-white rounded p-3 border border-blue-300 text-blue-900 text-center break-words shadow-inner">
-            {value || <span className="italic text-blue-400">(No value)</span>}
-          </div>
-        )}
+      <div
+        id={`hidden-field-${field}`}
+        className={`w-full transition-all duration-300 overflow-hidden ${revealed ? 'max-h-40 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
+        aria-hidden={!revealed}
+      >
+        <div className="bg-white rounded p-3 border border-blue-300 text-blue-900 text-center break-words shadow-inner min-h-[32px]">
+          {value || <span className="italic text-blue-400">(No value)</span>}
+        </div>
       </div>
     </div>
   );
+}
+
+// Unified field renderer for all card fields
+function CardField({
+  label,
+  value,
+  type = 'text',
+  isEditing,
+  onChange,
+  multiline = false,
+  ...props
+}) {
+  // Use Editor for code fields, textarea for multiline, input for others
+  if (type === 'code') {
+    return (
+      <div className="flex items-start gap-2 text-base text-midnight bg-lightgray rounded-xl px-5 py-3 shadow-card border-l-4 border-sky animate-card-pop">
+        <span className="font-semibold w-32 text-sky pt-1">{label}:</span>
+        <div className="flex-1">
+          <Editor
+            height="180px"
+            defaultLanguage="python"
+            value={value || ''}
+            onChange={isEditing ? v => onChange(v ?? '') : undefined}
+            options={{
+              readOnly: !isEditing,
+              minimap: { enabled: false },
+              fontSize: 14,
+              wordWrap: 'on',
+              scrollBeyondLastLine: false,
+              lineNumbers: 'off',
+              renderLineHighlight: 'none',
+              scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
+            }}
+            className={
+              'rounded-xl border border-transparent focus:border-sky transition-colors bg-white/90' +
+              (isEditing ? ' ring-2 ring-sky' : '')
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+  if (multiline) {
+    return (
+      <div className="flex items-center gap-2 text-base text-midnight bg-lightgray rounded-xl px-5 py-3 shadow-card border-l-4 border-sky animate-card-pop">
+        <span className="font-semibold w-32 text-sky">{label}:</span>
+        <textarea
+          className={
+            'flex-1 bg-transparent border-none outline-none resize-y min-h-[80px] text-midnight' +
+            (isEditing ? ' border border-sky bg-white/90 rounded-xl px-2 py-1 shadow-card focus:ring-2 focus:ring-sky' : '')
+          }
+          value={value || ''}
+          onChange={isEditing ? e => onChange(e.target.value) : undefined}
+          readOnly={!isEditing}
+          disabled={!isEditing}
+          {...props}
+        />
+      </div>
+    );
+  }
+  // Default: input for text/number
+  return (
+    <div className="flex items-center gap-2 text-base text-midnight bg-lightgray rounded-xl px-5 py-3 shadow-card border-l-4 border-sky animate-card-pop">
+      <span className="font-semibold w-32 text-sky">{label}:</span>
+      <input
+        className={
+          'flex-1 bg-transparent border-none outline-none text-midnight' +
+          (isEditing ? ' border border-sky bg-white/90 rounded-xl px-2 py-1 shadow-card focus:ring-2 focus:ring-sky' : '')
+        }
+        type="text"
+        value={value || ''}
+        onChange={isEditing ? e => onChange(e.target.value) : undefined}
+        readOnly={!isEditing}
+        disabled={!isEditing}
+        {...props}
+      />
+    </div>
+  );
+}
+
+// Utility to strictly enforce card data matches card type fields
+function normalizeCardData(fields, data) {
+  const result = {};
+  (fields || []).forEach(f => { result[f] = data && data[f] !== undefined ? data[f] : ''; });
+  return result;
 }
