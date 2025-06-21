@@ -44,7 +44,6 @@ class CardType(models.Model):
                     "pseudo",
                     "solution",
                     "complexity",
-                    "tags",
                 ],
                 "layout": {
                     "front": ["problem", "difficulty", "category", "hint"],

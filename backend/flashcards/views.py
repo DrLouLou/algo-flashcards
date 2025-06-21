@@ -423,7 +423,20 @@ class CardTypeViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if instance.owner != request.user:
             return Response({"detail": "Not found."}, status=404)
-        return super().update(request, *args, **kwargs)
+        response = super().update(request, *args, **kwargs)
+        # --- MIGRATION: update all cards of this type to match new fields ---
+        updated_instance = self.get_object()  # get updated CardType
+        new_fields = list(updated_instance.fields)
+        # For all decks using this CardType
+        for deck in updated_instance.decks.all():
+            for card in deck.cards.all():
+                data = card.data or {}
+                # Only keep fields in new_fields, add missing as empty, preserve order
+                new_data = {f: data.get(f, "") for f in new_fields}
+                if data != new_data:
+                    card.data = new_data
+                    card.save(update_fields=["data"])
+        return response
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
