@@ -145,7 +145,7 @@ class CardSerializer(serializers.ModelSerializer):
     pseudo = serializers.CharField(source="data.pseudo", read_only=True)
     solution = serializers.CharField(source="data.solution", read_only=True)
     complexity = serializers.CharField(source="data.complexity", read_only=True)
-    tags = serializers.CharField(source="data.tags", read_only=True)
+    tags = serializers.CharField(required=False, allow_blank=True)
     deck = DeckSerializer(read_only=True)
     deck_id = serializers.PrimaryKeyRelatedField(
         queryset=Deck.objects.all(), source="deck", write_only=True, required=False
@@ -190,21 +190,20 @@ class CardSerializer(serializers.ModelSerializer):
                 )
         return super().validate(attrs)
 
+    def update(self, instance, validated_data):
+        # Accept tags as a top-level field and save to instance.tags
+        tags = validated_data.pop("tags", None)
+        if tags is not None:
+            instance.tags = tags
+        # Do NOT add tags to data dict unless it's a declared field (which it shouldn't be)
+        return super().update(instance, validated_data)
+
     def create(self, validated_data):
-        # Ensure top-level fields are set from data dict if present
-        data = validated_data.get("data", {})
-        for field in [
-            "problem",
-            "difficulty",
-            "category",
-            "hint",
-            "pseudo",
-            "solution",
-            "complexity",
-            "tags",
-        ]:
-            if field in data:
-                validated_data[field] = data[field]
+        # Accept tags as a top-level field and save to instance.tags
+        tags = validated_data.pop("tags", None)
+        if tags is not None:
+            validated_data["tags"] = tags
+        # Do NOT add tags to data dict unless it's a declared field (which it shouldn't be)
         return super().create(validated_data)
 
 
