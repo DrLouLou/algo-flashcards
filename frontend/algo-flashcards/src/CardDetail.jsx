@@ -189,25 +189,22 @@ export default function CardDetail({ decks }) {
           <svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15.232 5.232l3.536 3.536M9 11l6 6M3 21v-4.586a1 1 0 01.293-.707l12-12a1 1 0 011.414 0l4.586 4.586a1 1 0 010 1.414l-12 12a1 1 0 01-.707.293H3z' /></svg>
           <span>Edit</span>
         </button>
-        {/* METADATA PILLS: tags and (for starter deck) category */}
-        <div className="flex flex-wrap gap-2 mb-2">
+        {/* METADATA PILLS: tags and (for starter deck) category, with inline TagEditor in edit mode */}
+        <div className="flex flex-wrap gap-2 mb-2 items-center">
           {isStarter && category && (
             <span className="bg-accent-purple/10 text-accent-purple px-3 py-1 rounded-pill text-xs font-medium shadow-card animate-card-pop">{category}</span>
           )}
-          {tagsArr.map(tag => (
-            <span key={tag} className="bg-sky/10 text-sky px-3 py-1 rounded-pill text-xs font-medium shadow-card animate-card-pop">{tag}</span>
-          ))}
+          {/* Tags as pills, editable inline in edit mode */}
+          <TagEditor
+            tags={tagsArr}
+            onChange={isEditing ? handleTagsChange : undefined}
+            editable={isEditing}
+            pillClassName="bg-sky/10 text-sky px-3 py-1 rounded-pill text-xs font-medium shadow-card animate-card-pop"
+            inputClassName="border border-sky rounded-pill px-2 py-1 text-xs ml-2 focus:ring-2 focus:ring-sky"
+            addButtonLabel="Add"
+          />
         </div>
-        {/* TAGS editor (edit mode only) */}
-        {isEditing && (
-          <div className="mb-4">
-            <h2 className="text-2xl font-bold text-midnight mb-3 tracking-tight flex items-center gap-2"><svg xmlns='http://www.w3.org/2000/svg' className='h-6 w-6 text-sky' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M7 7h.01M7 11h.01M7 15h.01M11 7h2M11 11h2M11 15h2M15 7h.01M15 11h.01M15 15h.01' /></svg>Tags</h2>
-            <TagEditor
-              tags={tagsArr}
-              onChange={tagsArr => handleTagsChange(tagsArr)}
-            />
-          </div>
-        )}
+        {/* ...existing code... */}
         {/* Status controls if available */}
         {formData.status && (
           <div className="flex gap-2 items-center">

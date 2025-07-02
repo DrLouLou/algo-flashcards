@@ -235,8 +235,7 @@ export default function DeckDetail({ decks, reloadDecks }) {
           })}
         </div>
         {/* Tag filter */}
-        <div className="mb-8">
-          <div className="font-semibold mb-2 text-midnight">Filter by Tag</div>
+        <div className="mb-2">
           <TagEditor
             tags={selectedTags}
             onChange={setSelectedTags}
