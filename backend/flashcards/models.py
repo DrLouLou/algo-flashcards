@@ -48,6 +48,7 @@ class CardType(models.Model):
                 "layout": {
                     "front": ["problem", "difficulty", "category", "hint"],
                     "back": ["pseudo", "solution", "complexity"],
+                    "hidden": ["hint"],
                 },
             },
         )

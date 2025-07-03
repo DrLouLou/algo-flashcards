@@ -67,11 +67,25 @@ class Command(BaseCommand):
             if list(default_cardtype.fields) != default_fields:
                 default_cardtype.fields = default_fields
                 default_cardtype.save(update_fields=["fields"])
+            # Ensure correct layout for hidden hint
+            correct_layout = {
+                "front": ["problem", "difficulty", "category", "hint"],
+                "back": ["pseudo", "solution", "complexity"],
+                "hidden": ["hint"],
+            }
+            if default_cardtype.layout != correct_layout:
+                default_cardtype.layout = correct_layout
+                default_cardtype.save(update_fields=["layout"])
         else:
             default_cardtype = CardType.objects.create(
                 name="Default",
                 owner=user,
                 fields=default_fields,
+                layout={
+                    "front": ["problem", "difficulty", "category", "hint"],
+                    "back": ["pseudo", "solution", "complexity"],
+                    "hidden": ["hint"],
+                },
             )
 
         # Get or update the Starter Deck for this user (robust to duplicates)

@@ -27,11 +27,14 @@ export function getCardLayout(cardType, cardData) {
   if (isStarterCardType(cardType)) {
     const front = Array.isArray(layout.front) && layout.front.length > 0 ? layout.front.filter(f => f !== 'tags') : FILTERED_STARTER_FRONT;
     const back = Array.isArray(layout.back) && layout.back.length > 0 ? layout.back.filter(f => f !== 'tags') : FILTERED_STARTER_BACK;
-    return { front, back };
+    // FIX: Always return hidden fields if present in layout
+    const hidden = Array.isArray(layout.hidden) ? layout.hidden : [];
+    return { front, back, hidden };
   }
 
   // Custom CardType: use layout if valid, else all fields on front
   const front = Array.isArray(layout.front) && layout.front.length > 0 ? layout.front.filter(f => f !== 'tags') : fields;
   const back = Array.isArray(layout.back) && layout.back.length > 0 ? layout.back.filter(f => f !== 'tags') : [];
-  return { front, back };
+  const hidden = Array.isArray(layout.hidden) ? layout.hidden : [];
+  return { front, back, hidden };
 }

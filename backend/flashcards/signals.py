@@ -17,7 +17,23 @@ def bootstrap_user(sender, instance, created, **kwargs):
     card_type, _ = CardType.objects.get_or_create(
         owner=instance,
         name="Default",
-        defaults={"description": "Default card type", "fields": []},
+        defaults={
+            "description": "Default card type",
+            "fields": [
+                "problem",
+                "difficulty",
+                "category",
+                "hint",
+                "pseudo",
+                "solution",
+                "complexity",
+            ],
+            "layout": {
+                "front": ["problem", "difficulty", "category", "hint"],
+                "back": ["pseudo", "solution", "complexity"],
+                "hidden": ["hint"],
+            },
+        },
     )
     # 2) Create an empty personal deck for the new user with a valid card_type
     Deck.objects.create(
