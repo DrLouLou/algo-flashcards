@@ -57,7 +57,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, selectedDeckTags, setSelectedDeckTags, reloadDecks }) {
+function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, selectedDeckTags, setSelectedDeckTags, reloadDecks, reloadTrigger }) {
   const navigate = useNavigate();
   const [showCardTypeModal, setShowCardTypeModal] = useState(false);
   const [showCardTypeManagement, setShowCardTypeManagement] = useState(false);
@@ -112,7 +112,7 @@ function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, select
         setDeckNextCursor(null);
       })
       .finally(() => setDeckLoading(false));
-  }, [deckCursor, selectedDeckTags, deckSearch, reloadDecks, token]);
+  }, [deckCursor, selectedDeckTags, deckSearch, reloadDecks, reloadTrigger, token]);
 
   // Reset pagination when filters/search change
   useEffect(() => {
@@ -181,7 +181,7 @@ function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, select
             path="/login"
             element={
               token
-                ? <Navigate to="/" replace />
+                ? <Navigate to="/decks" replace />
                 : <Auth onLogin={setToken} />
             }
           />
@@ -189,9 +189,12 @@ function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, select
           {/* ---------- PROTECTED ---------- */}
           {token ? (
             <>
-              {/* Home */}
+              {/* Home - redirect to decks */}
+              <Route path="/" element={<Navigate to="/decks" replace />} />
+              
+              {/* Decks list */}
               <Route
-                path="/"
+                path="/decks"
                 element={
                   <>
                     {/* logo + title */}
@@ -332,8 +335,11 @@ function AppRoutes({ token, setToken, decks, setDecks, busyId, setBusyId, select
               <Route path="/generate"   element={<Generate />} />
               {/* Card detail: slug only */}
               <Route path="/cards/:slug"  element={<CardDetail decks={decks} />} />
-              <Route path="/cards/new"  element={<CreateCard decks={decks} />} />
               <Route path="/decks/new"  element={<CreateDeck reloadDecks={reloadDecks} />} />
+              <Route
+                path="/decks/:slug/cards/new"
+                element={<CreateCard decks={Array.isArray(decks?.results) ? decks.results : []} reloadDecks={reloadDecks} />}
+              />
               <Route
                 path="/learn/:deckId"
                 element={<Learn />}
@@ -363,12 +369,15 @@ export default function App() {
   const [selectedDeckTags, setSelectedDeckTags] = useState([]);
 
   // Only fetch decks if token is present
+  const [reloadTrigger, setReloadTrigger] = useState(0);
   const reloadDecks = useCallback(() => {
     if (!token) return;
     fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/decks/`)
       .then(r => r.json())
       .then(setDecks)
       .catch(console.error);
+    // Trigger a refresh of paginated decks by incrementing the trigger
+    setReloadTrigger(prev => prev + 1);
   }, [token]);
 
   useEffect(() => {
@@ -418,6 +427,7 @@ export default function App() {
             selectedDeckTags={selectedDeckTags}
             setSelectedDeckTags={setSelectedDeckTags}
             reloadDecks={reloadDecks}
+            reloadTrigger={reloadTrigger}
           />
         </Router>
       </ErrorBoundary>

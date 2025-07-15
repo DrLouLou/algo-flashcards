@@ -5,7 +5,6 @@ import fetchWithAuth from './api';
 import CardContainer from './CardContainer';
 import TagEditor from './TagEditor';
 import { HiPlus } from 'react-icons/hi';
-import CreateCard from './CreateCard';
 
 export default function DeckDetail({ decks, reloadDecks }) {
   // Always resolve decksArr as the array of decks, memoized
@@ -26,7 +25,6 @@ export default function DeckDetail({ decks, reloadDecks }) {
   const [selectedDifficulties, setSelectedDifficulties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showAddCard, setShowAddCard] = useState(false);
 
   // Find deck id: prefer location.state, else look up by slug
   const deck = useMemo(() => {
@@ -161,21 +159,21 @@ export default function DeckDetail({ decks, reloadDecks }) {
           <div>
             <h2 className="text-4xl font-bold tracking-tight mb-2 flex items-center gap-4 text-midnight">
               {deck.name}
-              <Link to="/">
+              <Link to="/decks">
                 <button className="ml-4 rounded-xl border border-sky bg-white px-5 py-2 text-base font-medium text-sky hover:bg-sky hover:text-white transition-colors shadow-card hover:shadow-card-hover">Back to Decks</button>
               </Link>
             </h2>
             <p className="text-gray-500 text-base mb-2">{deck.description}</p>
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={() => setShowAddCard(true)}
-              className="rounded-xl bg-sky px-6 py-3 text-base font-semibold text-white shadow-card hover:bg-sky/90 hover:shadow-card-hover transition-colors animate-card-pop"
+            <Link
+              to={`/decks/${slug}/cards/new`}
+              className="inline-flex items-center gap-2 rounded-xl bg-sky px-6 py-3 text-base font-semibold text-white shadow-card hover:bg-sky/90 hover:shadow-card-hover transition-colors animate-card-pop"
               style={{boxShadow:'0 2px 8px rgba(58,175,255,0.10)'}}
             >
               <HiPlus className="h-6 w-6" />
               Add Card
-            </button>
+            </Link>
             <button
               onClick={() => navigate(`/learn/${deck.id}`)}
               className="inline-flex items-center gap-2 rounded-xl border border-accent-purple bg-white px-6 py-3 text-base font-semibold text-accent-purple shadow-card hover:bg-accent-purple hover:text-white hover:shadow-card-hover transition-colors"
@@ -184,31 +182,6 @@ export default function DeckDetail({ decks, reloadDecks }) {
             </button>
           </div>
         </div>
-        {/* Add Card Modal/Inline */}
-        {showAddCard && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full relative">
-              <button
-                onClick={() => setShowAddCard(false)}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
-                aria-label="Close"
-              >
-                ×
-              </button>
-              <CreateCard
-                decks={decksArr}
-                reloadCards={() => {
-                  setShowAddCard(false);
-                  fetchWithAuth(`${import.meta.env.VITE_API_BASE_URL}/cards/?deck=${id}`)
-                    .then(r => r.json())
-                    .then(d => setCards(d.results || []));
-                  if (reloadDecks) reloadDecks();
-                }}
-                defaultDeckId={deck.id}
-              />
-            </div>
-          </div>
-        )}
         {/* Difficulty filter */}
         <div className="mb-6 flex flex-wrap gap-3 items-center">
           {['Easy', 'Medium', 'Hard'].map(diff => {

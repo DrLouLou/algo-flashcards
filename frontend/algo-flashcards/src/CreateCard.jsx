@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import fetchWithAuth from './api';
 import Editor from '@monaco-editor/react';
 import TagEditor from './TagEditor';
@@ -12,10 +12,21 @@ function normalizeCardData(fields, data) {
   return result;
 }
 
-export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
+export default function CreateCard({ decks, reloadDecks }) {
   const navigate = useNavigate();
+  const { slug } = useParams();
+  
+  // Find the deck from the URL slug
+  const selectedDeck = useMemo(() => {
+    if (!decks || !slug) return null;
+    return decks.find(d => {
+      const kebab = d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      return kebab === slug;
+    });
+  }, [decks, slug]);
+
   const [form, setForm] = useState({
-    deck: defaultDeckId || (decks.length ? decks[0].id : ''),
+    deck: selectedDeck?.id || '',
     problem: '',
     difficulty: '',
     category: '',
@@ -27,8 +38,6 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
   });
   const [saving, setSaving] = useState(false);
 
-  // Find the selected deck object
-  const selectedDeck = useMemo(() => (Array.isArray(decks) ? decks.find(d => String(d.id) === String(form.deck)) : null), [form.deck, decks]);
   // Get the card type fields for the selected deck, always as array
   const cardTypeFields = useMemo(() => {
     if (selectedDeck && selectedDeck.card_type && Array.isArray(selectedDeck.card_type.fields)) {
@@ -38,13 +47,21 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
     return ['problem','difficulty','category','hint','pseudo','solution','complexity'];
   }, [selectedDeck]);
 
-  useEffect(() => {
-    if (defaultDeckId) {
-      setForm(f => ({ ...f, deck: defaultDeckId }));
-    } else if (decks.length > 0) {
-      setForm(f => ({ ...f, deck: decks[0].id }));
+  // Fields that are hidden for this card type (from the database)
+  const hiddenFields = useMemo(() => {
+    if (selectedDeck && selectedDeck.card_type && selectedDeck.card_type.layout && Array.isArray(selectedDeck.card_type.layout.hidden)) {
+      console.log('Hidden fields from card type:', selectedDeck.card_type.layout.hidden);
+      return selectedDeck.card_type.layout.hidden;
     }
-  }, [defaultDeckId, decks]);
+    console.log('No hidden fields found or invalid structure');
+    return [];
+  }, [selectedDeck]);
+
+  useEffect(() => {
+    if (selectedDeck) {
+      setForm(f => ({ ...f, deck: selectedDeck.id }));
+    }
+  }, [selectedDeck]);
 
   // --- update form state to always have all fields ---
   useEffect(() => {
@@ -129,10 +146,10 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
         return;
       }
       setSuccess('Card created! Redirecting...');
-      if (reloadCards) reloadCards();
+      if (reloadDecks) reloadDecks();
       // Redirect to the deck detail page for the current deck
       const kebab = selectedDeck.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-      setTimeout(() => navigate(`/decks/${kebab}`, { state: { id: deckId } }), 1200);
+      setTimeout(() => navigate(`/decks/${kebab}`, { state: { id: selectedDeck.id } }), 1200);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -148,6 +165,24 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
   // --- Metadata pills: tags and (for default deck) category ---
   // Show tags and, for starter deck, category as metadata above the form
   // (category is not editable here, just shown as a pill if present)
+
+  // Handle case where deck is not found
+  if (!selectedDeck) {
+    return (
+      <div className="min-h-screen w-full bg-gradient-subtle font-sans flex justify-center items-center py-14 px-2">
+        <div className="w-full max-w-3xl bg-white rounded-2xl shadow-card p-10 text-center">
+          <h2 className="mb-8 text-3xl font-bold text-midnight tracking-tight">Deck Not Found</h2>
+          <p className="text-gray-600 mb-6">The deck you're trying to create a card for doesn't exist.</p>
+          <Link
+            to="/decks"
+            className="inline-block rounded-xl bg-sky px-6 py-3 text-base font-semibold text-white shadow-card hover:bg-sky/90 hover:shadow-card-hover transition-colors"
+          >
+            Back to Decks
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-gradient-subtle font-sans flex justify-center items-center py-14 px-2">
@@ -178,33 +213,35 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
           </p>
         )}
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Only show deck select if NOT in DeckDetail (no defaultDeckId) and more than one deck */}
-          {(!defaultDeckId && Array.isArray(decks) && decks.length > 1) && (
+          {/* Show current deck info */}
+          {selectedDeck && (
             <div className="col-span-full mb-4">
-              <label className="mb-1 text-base font-semibold text-midnight">Deck</label>
-              <select
-                name="deck"
-                value={form.deck}
-                onChange={handleChange}
-                required
-                className="rounded-xl border border-gray-300 py-3 px-4 text-base shadow-sm focus:border-sky focus:ring-1 focus:ring-sky bg-lightgray"
-              >
-                {Array.isArray(decks) ? decks.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                )) : null}
-              </select>
-            </div>
-          )}
-          {/* If in DeckDetail, show deck name as read-only info */}
-          {(defaultDeckId && selectedDeck) && (
-            <div className="col-span-full mb-4">
-              <label className="mb-1 text-base font-semibold text-midnight">Deck</label>
-              <input
-                type="text"
-                value={selectedDeck.name}
-                disabled
-                className="rounded-xl border border-gray-300 py-3 px-4 text-base shadow-sm bg-lightgray text-midnight cursor-not-allowed"
-              />
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                Creating card for: <span className="text-sky-600">{selectedDeck.name}</span>
+              </h3>
+              <p className="text-sm text-gray-600">{selectedDeck.description}</p>
+              
+              {/* Show hidden fields information */}
+              {hiddenFields.length > 0 && (
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-amber-800 mb-1">
+                    Hidden Fields for this Card Type:
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {hiddenFields.map(field => (
+                      <span 
+                        key={field} 
+                        className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800"
+                      >
+                        {field.charAt(0).toUpperCase() + field.slice(1)}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-amber-700 mt-2">
+                    These fields are hidden as configured in your deck's card type settings.
+                  </p>
+                </div>
+              )}
             </div>
           )}
           {/* Only render fields from cardTypeFields, never 'tags' or (for starter) 'category' */}
@@ -256,7 +293,14 @@ export default function CreateCard({ decks, reloadCards, defaultDeckId }) {
           <div className="col-span-full flex justify-end gap-4 pt-2">
             <button
               type="button"
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                if (selectedDeck) {
+                  const kebab = selectedDeck.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                  navigate(`/decks/${kebab}`, { state: { id: selectedDeck.id } });
+                } else {
+                  navigate('/decks');
+                }
+              }}
               className="rounded-xl bg-red-500 px-6 py-3 text-base font-medium text-white shadow-card hover:bg-red-600 hover:shadow-card-hover transition-colors"
               disabled={saving}
             >

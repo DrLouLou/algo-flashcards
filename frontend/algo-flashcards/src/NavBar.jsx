@@ -12,7 +12,7 @@ export default function NavBar({ onLogout }) {
   };
 
   const menu = [
-    { to: '/',         label: 'Home'      },
+    { to: '/decks',    label: 'Decks'     },
     { to: '/generate', label: 'Generate'  },
     { to: '/about',    label: 'About'     },
     // { to: '/alarm',    label: 'Alarm'     },
@@ -24,7 +24,7 @@ export default function NavBar({ onLogout }) {
       <div className="mx-auto max-w-7xl h-16 flex items-center justify-between px-4">
         {/* -------- Left: logo and nav links -------- */}
         <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to="/decks" className="flex items-center gap-2 group">
             <img src="/icon.png" alt="Card.io Logo" className="h-8 w-8" />
             <span className="font-extrabold text-lg text-indigo-700 group-hover:text-indigo-900 tracking-tight">Card.io</span>
           </Link>
