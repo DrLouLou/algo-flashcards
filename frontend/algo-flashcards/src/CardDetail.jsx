@@ -35,10 +35,7 @@ export default function CardDetail({ decks }) {
       cardType.fields = Object.keys(formData.data);
     }
   }
-  const { front: frontFields, back: backFields } = getCardLayout(cardType, formData?.data);
-
-  // Get hidden fields from cardType.layout.hidden (array of field names)
-  const hiddenFields = Array.isArray(cardType?.layout?.hidden) ? cardType.layout.hidden : [];
+  const { front: frontFields, back: backFields, hidden: hiddenFields } = getCardLayout(cardType, formData?.data);
 
   // Get hidden fields for front and back, preserving order
   const hiddenFrontFields = Array.isArray(cardType?.layout?.front)
@@ -204,7 +201,6 @@ export default function CardDetail({ decks }) {
             addButtonLabel="Add"
           />
         </div>
-        {/* ...existing code... */}
         {/* Status controls if available */}
         {formData.status && (
           <div className="flex gap-2 items-center">

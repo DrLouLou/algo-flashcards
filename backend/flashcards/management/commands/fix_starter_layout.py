@@ -11,6 +11,7 @@ class Command(BaseCommand):
             ct.layout = {
                 "front": ["problem", "difficulty", "category", "hint"],
                 "back": ["pseudo", "solution", "complexity"],
+                "hidden": ["hint"],
             }
             ct.save()
             updated += 1
