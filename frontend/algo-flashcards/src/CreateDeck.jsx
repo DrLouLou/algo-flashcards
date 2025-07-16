@@ -2,9 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import fetchWithAuth from './api'
-import './styles/CreateDeck.css'
 import TagEditor from './TagEditor'
-import { Info } from "lucide-react";
+import { HiInformationCircle, HiCollection, HiCog, HiTag, HiTemplate } from 'react-icons/hi';
 
 // Helper to get showable card type IDs from localStorage (set by CardTypeManagement)
 function getShowableCardTypeIds() {
@@ -22,6 +21,7 @@ export default function CreateDeck({reloadDecks}) {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null);
   const [cardTypes, setCardTypes] = useState([])
+  const [loading, setLoading] = useState(false)
   const nav = useNavigate()
 
   // Fetch card types on mount
@@ -52,8 +52,10 @@ export default function CreateDeck({reloadDecks}) {
     e.preventDefault()
     setError(null)
     setSuccess(null)
+    setLoading(true)
     if (!form.card_type) {
       setError('Please select a card type.');
+      setLoading(false)
       return;
     }
     try {
@@ -80,6 +82,7 @@ export default function CreateDeck({reloadDecks}) {
         //   }
         // } catch {} // ignore JSON parse errors
         setError(errMsg);
+        setLoading(false)
         return;
       }
       setSuccess('Deck created! Redirecting...');
@@ -87,6 +90,7 @@ export default function CreateDeck({reloadDecks}) {
       setTimeout(() => nav(-1), 1200);
     } catch (err) {
       setError(err.message)
+      setLoading(false)
     }
   }
 
@@ -94,89 +98,177 @@ export default function CreateDeck({reloadDecks}) {
   const selectedCardType = cardTypes.find(ct => String(ct.id) === String(form.card_type));
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex justify-center items-center py-10 px-2">
-      <div className="create-deck-page bg-white rounded-2xl shadow-xl p-8 w-full max-w-xl">
-        <h2>New Deck</h2>
-        {error && <p className="error bg-red-50 text-red-700 px-3 py-2 rounded mb-2">{error}</p>}
-        {success && <p className="bg-green-50 text-green-700 px-3 py-2 rounded mb-2">{success}</p>}
-        <form onSubmit={handleSubmit} className="create-deck-form">
-          <label>
-            Name
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
-          </label>
-          <label>
-            Description
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-            />
-          </label>
-          <label>
-            Tags
-            <TagEditor
-              tags={form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
-              onChange={handleTagsChange}
-              addButtonLabel="Add Tag"
-            />
-          </label>
-          <label>
-            Card Type
-            <div className="flex gap-2 items-center">
-              <select
-                name="card_type"
-                value={form.card_type}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select a card type…</option>
-                {cardTypes.map(ct => (
-                  <option key={ct.id} value={ct.id}>{ct.name}</option>
-                ))}
-              </select>
-            </div>
-          </label>
-          {/* Show card type fields preview if a card type is selected */}
-          {selectedCardType && (
-            <div className="mb-6 mt-2 p-4 bg-white border border-indigo-200 rounded-lg shadow-sm">
-              <div className="font-semibold text-indigo-700 mb-2 flex items-center gap-2">
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="#6366f1" opacity="0.1"/><rect x="3" y="5" width="18" height="14" rx="2" stroke="#6366f1" strokeWidth="1.5"/><path d="M7 9h10M7 13h6" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                Fields for this Card Type
-                <span className="relative group ml-1">
-                  <Info size={18} className="text-indigo-400 cursor-pointer" />
-                  <span className="absolute left-1/2 -translate-x-1/2 mt-2 w-56 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition pointer-events-none z-10 shadow-lg">
-                    These are the fields that every card in this deck will have. You can only add cards with these fields.
-                  </span>
-                </span>
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-sky-500 to-indigo-600 text-white px-8 py-6">
+            <div className="flex items-center gap-3">
+              <HiCollection className="w-8 h-8 text-sky-100" />
+              <div>
+                <h1 className="text-3xl font-bold">Create New Deck</h1>
+                <p className="text-sky-100 mt-1">Set up a new flashcard deck with your preferred settings</p>
               </div>
-              <ul className="pl-0 space-y-1">
-                {selectedCardType.fields && selectedCardType.fields.length > 0 ? (
-                  selectedCardType.fields.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 py-0.5 px-2 rounded hover:bg-indigo-50 transition-all" style={{listStyle:'none'}}>
-                      <span className="inline-block w-2 h-2 bg-indigo-400 rounded-full"></span>
-                      <span className="inline-block font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-xs border border-indigo-100">{f}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="italic text-gray-400">No fields defined</li>
-                )}
-              </ul>
             </div>
-          )}
-          <button type="submit" className="save-btn">Create Deck</button>
-          <button
-            type="button"
-            onClick={() => nav(-1)}
-            className="cancel-btn"
-          >
-            Cancel
-          </button>
-        </form>
+          </div>
+
+          {/* Content */}
+          <div className="p-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Basic Information */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <HiCog className="w-5 h-5 text-sky-600" />
+                  Basic Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Deck Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-base transition-all"
+                      placeholder="e.g., Algorithm Practice"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      name="description"
+                      value={form.description}
+                      onChange={handleChange}
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-base resize-none transition-all"
+                      placeholder="Brief description of this deck"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Type Selection */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <HiTemplate className="w-5 h-5 text-sky-600" />
+                  Card Type <span className="text-red-500">*</span>
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Card Type
+                    </label>
+                    <select
+                      name="card_type"
+                      value={form.card_type}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-base transition-all"
+                    >
+                      <option value="">Choose a card type...</option>
+                      {cardTypes.map(ct => (
+                        <option key={ct.id} value={ct.id}>{ct.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Card Type Preview */}
+                  {selectedCardType && (
+                    <div className="bg-white border border-indigo-200 rounded-xl p-4 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <HiInformationCircle className="w-5 h-5 text-indigo-500" />
+                        <h4 className="font-semibold text-indigo-700">Card Type Preview</h4>
+                      </div>
+                      <div className="mb-3">
+                        <p className="text-sm text-gray-600 mb-2">
+                          <strong>Description:</strong> {selectedCardType.description || 'No description available'}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          <strong>Fields ({selectedCardType.fields?.length || 0}):</strong>
+                        </p>
+                      </div>
+                      
+                      {selectedCardType.fields && selectedCardType.fields.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {selectedCardType.fields.map((field, index) => (
+                            <div key={index} className="flex items-center gap-2 bg-indigo-50 px-3 py-2 rounded-lg">
+                              <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
+                              <span className="text-sm font-medium text-indigo-700">{field}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">No fields defined for this card type</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Tags */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <HiTag className="w-5 h-5 text-sky-600" />
+                  Tags
+                </h3>
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <TagEditor
+                    tags={form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []}
+                    onChange={handleTagsChange}
+                    addButtonLabel="Add Tag"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                <div className="flex-1">
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                      {error}
+                    </div>
+                  )}
+                  {success && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
+                      {success}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 ml-4">
+                  <button
+                    type="button"
+                    onClick={() => nav(-1)}
+                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                    disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || !form.card_type}
+                    className="px-8 py-3 bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium shadow-lg hover:shadow-xl"
+                  >
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating...
+                      </span>
+                    ) : (
+                      'Create Deck'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   )
